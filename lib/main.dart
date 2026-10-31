@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'firebase_config.dart';
 import 'group_service.dart';
 import 'home_page.dart';
+import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +30,9 @@ class AirApp extends StatelessWidget {
     return MaterialApp(
       title: 'Raasta',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(colorSchemeSeed: Colors.deepOrange, useMaterial3: true),
+      theme: buildRaastaTheme(brightness: Brightness.light),
+      darkTheme: buildRaastaTheme(brightness: Brightness.dark),
+      themeMode: ThemeMode.system,
       home: HomePage(service: service),
     );
   }
