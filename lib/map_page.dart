@@ -247,6 +247,13 @@ class _MapPageState extends State<MapPage> {
               child: Text(_voice.error!),
             ),
           ),
+        if (_voice.status.isNotEmpty)
+          Text(
+            _voice.status.entries
+                .map((e) => '${e.key.substring(0, 4)}: ${e.value}')
+                .join('   '),
+            style: const TextStyle(fontSize: 11, color: Colors.white70),
+          ),
         Listener(
           onPointerDown: (_) => _voice.setTalking(true),
           onPointerUp: (_) => _voice.setTalking(false),

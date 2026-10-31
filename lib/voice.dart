@@ -5,6 +5,7 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import 'group_service.dart';
 import 'rider.dart';
+import 'voice_config.dart';
 
 /// Push-to-talk over a full mesh of WebRTC audio links (fine for a handful of
 /// riders). Everyone keeps their mic track muted until [setTalking] is called.
@@ -12,11 +13,10 @@ class VoiceController extends ChangeNotifier {
   final GroupService service;
   VoiceController(this.service);
 
-  static const _ice = {
-    'iceServers': [
-      {'urls': 'stun:stun.l.google.com:19302'},
-    ],
-  };
+  Map<String, dynamic> get _ice => {'iceServers': iceServers};
+
+  /// Per-rider link state, shown on screen to help debug connections.
+  final status = <String, String>{};
 
   MediaStream? _local;
   StreamSubscription<Signal>? _sig;
@@ -100,6 +100,10 @@ class VoiceController extends ChangeNotifier {
     pc.onTrack = (e) {
       if (e.streams.isNotEmpty) _attach(id, e.streams.first);
     };
+    pc.onIceConnectionState = (s) {
+      status[id] = s.name.replaceFirst('RTCIceConnectionState', '');
+      notifyListeners();
+    };
     pc.onConnectionState = (s) {
       if (s == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
           s == RTCPeerConnectionState.RTCPeerConnectionStateClosed) {
@@ -177,6 +181,7 @@ class VoiceController extends ChangeNotifier {
 
   Future<void> _close(String id) async {
     _pendingIce.remove(id);
+    status.remove(id);
     final pc = _pcs.remove(id);
     final r = renderers.remove(id);
     await pc?.close();
