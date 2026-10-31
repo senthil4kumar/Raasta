@@ -77,7 +77,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Raasta',
+                  'Hogona',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineLarge
                       ?.copyWith(fontWeight: FontWeight.bold),
