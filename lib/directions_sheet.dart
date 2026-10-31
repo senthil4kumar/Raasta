@@ -151,7 +151,7 @@ class _DirectionsSheetState extends State<DirectionsSheet> {
             onTap: () => _editingStart = false,
             onChanged: (t) => _onChanged(t, false),
             decoration: InputDecoration(
-              prefixIcon: Icon(Icons.place_rounded, color: scheme.error),
+              prefixIcon: const Icon(Icons.place_rounded, color: RaastaColors.amber),
               labelText: 'Destination',
             ),
           ),
@@ -224,10 +224,10 @@ class _ResultTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return ListTile(
       dense: true,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       leading: GlassSurface(
         padding: const EdgeInsets.all(8),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(6),
         blur: 8,
         child: Icon(
           Icons.location_on_outlined,

@@ -16,16 +16,20 @@ import 'routing.dart';
 import 'theme/app_theme.dart';
 import 'voice.dart';
 import 'widgets/glass_surface.dart';
+import 'widgets/luxe_controls.dart' show TalkPulse;
 import 'widgets/pressable_scale.dart';
 
+// Muted, metallic rider tones: distinct but quiet next to the amber accent.
 const _palette = [
-  Color(0xFFE8710A),
-  Color(0xFF9334E6),
-  Color(0xFF188038),
-  Color(0xFFD93025),
-  Color(0xFF12B5CB),
-  Color(0xFFC2185B),
+  Color(0xFFE6E2DA),
+  Color(0xFF9FB0C2),
+  Color(0xFFB7A48A),
+  Color(0xFF8FB8A9),
+  Color(0xFFC49A9A),
+  Color(0xFFA79BC4),
 ];
+
+const _ink = Color(0xFF14100A);
 
 Color _colorFor(String id) => _palette[id.hashCode.abs() % _palette.length];
 
@@ -361,17 +365,11 @@ class _MapPageState extends State<MapPage> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: _colorFor(r.id),
-                  child: Text(
-                    r.name.isEmpty ? '?' : r.name[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
-                  ),
+                _Initial(
+                  name: r.name,
+                  color: _colorFor(r.id),
+                  size: 48,
+                  fontSize: 20,
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -395,8 +393,8 @@ class _MapPageState extends State<MapPage> {
               ],
             ),
             const SizedBox(height: 16),
-            FilledButton.tonalIcon(
-              style: FilledButton.styleFrom(
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(52),
               ),
               onPressed: () {
@@ -411,7 +409,6 @@ class _MapPageState extends State<MapPage> {
               FilledButton.icon(
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(52),
-                  backgroundColor: const Color(0xFF7B3FE4),
                 ),
                 onPressed: canPrivate
                     ? () {
@@ -554,9 +551,9 @@ class _MapPageState extends State<MapPage> {
                           Polyline(
                             points: _routeInfo!.points,
                             strokeWidth: 6,
-                            color: const Color(0xFF1A73E8),
-                            borderStrokeWidth: 2,
-                            borderColor: Colors.white,
+                            color: RaastaColors.amber,
+                            borderStrokeWidth: 2.5,
+                            borderColor: const Color(0xFF0B0B0D),
                           ),
                         ],
                       ),
@@ -569,7 +566,7 @@ class _MapPageState extends State<MapPage> {
                             height: 24,
                             child: const Icon(
                               Icons.trip_origin,
-                              color: Color(0xFF188038),
+                              color: Color(0xFF0B0B0D),
                             ),
                           ),
                           Marker(
@@ -580,7 +577,7 @@ class _MapPageState extends State<MapPage> {
                             child: const Icon(
                               Icons.place,
                               size: 40,
-                              color: Color(0xFFD93025),
+                              color: RaastaColors.amber,
                             ),
                           ),
                         ],
@@ -618,7 +615,7 @@ class _MapPageState extends State<MapPage> {
                         horizontal: 4,
                         vertical: 4,
                       ),
-                      borderRadius: BorderRadius.circular(28),
+                      borderRadius: BorderRadius.circular(10),
                       child: Row(
                         children: [
                           IconButton(
@@ -637,17 +634,27 @@ class _MapPageState extends State<MapPage> {
                                 children: [
                                   Row(
                                     children: [
-                                      const Text(
+                                      Text(
                                         'Ride ',
-                                        style: TextStyle(fontSize: 16),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w300,
+                                              letterSpacing: 1.6,
+                                            ),
                                       ),
                                       Text(
                                         widget.code,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 18,
-                                          letterSpacing: 2,
-                                        ),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleLarge
+                                            ?.copyWith(
+                                              color: RaastaColors.amber,
+                                              fontWeight: FontWeight.w400,
+                                              fontSize: 20,
+                                              letterSpacing: 4,
+                                            ),
                                       ),
                                       InkResponse(
                                         radius: 20,
@@ -676,7 +683,11 @@ class _MapPageState extends State<MapPage> {
                                     '${_latest.length} rider${_latest.length == 1 ? '' : 's'} on the map',
                                     style: Theme.of(context)
                                         .textTheme
-                                        .bodySmall,
+                                        .bodySmall
+                                        ?.copyWith(
+                                          color: RaastaColors.muted,
+                                          letterSpacing: 0.8,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -816,10 +827,10 @@ class _MapPageState extends State<MapPage> {
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
       child: GlassSurface(
         padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(8),
         child: Row(
           children: [
-            Icon(Icons.place_rounded, color: scheme.error),
+            const Icon(Icons.place_rounded, color: RaastaColors.amber),
             const SizedBox(width: 8),
             Expanded(
               child: Column(
@@ -895,9 +906,9 @@ class _MapPageState extends State<MapPage> {
       child: GlassSurface(
         key: ValueKey('$talkers|$privateTalkers|$onVoice|$offVoice'),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(8),
         blur: 14,
-        tint: talkingNow ? scheme.primary.withValues(alpha: 0.85) : null,
+        tint: talkingNow ? scheme.primary.withValues(alpha: 0.92) : null,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -943,8 +954,8 @@ class _MapPageState extends State<MapPage> {
       padding: const EdgeInsets.only(bottom: 8),
       child: GlassSurface(
         padding: const EdgeInsets.all(14),
-        borderRadius: BorderRadius.circular(16),
-        tint: scheme.secondaryContainer.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(8),
+        tint: scheme.secondaryContainer.withValues(alpha: 0.92),
         child: Row(
           children: [
             Icon(Icons.info_outline_rounded, color: scheme.secondary),
@@ -978,7 +989,7 @@ class _MapPageState extends State<MapPage> {
           children: [
             Icon(
               ok ? Icons.check_circle : Icons.radio_button_unchecked,
-              color: ok ? const Color(0xFF188038) : scheme.onSurfaceVariant,
+              color: ok ? RaastaColors.amber : scheme.onSurfaceVariant,
               size: 22,
             ),
             const SizedBox(width: 10),
@@ -986,10 +997,16 @@ class _MapPageState extends State<MapPage> {
               child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
             ),
             if (!ok && action != null)
-              FilledButton.tonal(
-                style: FilledButton.styleFrom(
+              OutlinedButton(
+                style: OutlinedButton.styleFrom(
                   visualDensity: VisualDensity.compact,
-                  minimumSize: const Size(0, 36),
+                  minimumSize: const Size(0, 34),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  foregroundColor: RaastaColors.amber,
+                  side: BorderSide(
+                    color: RaastaColors.amber.withValues(alpha: 0.6),
+                    width: 0.8,
+                  ),
                 ),
                 onPressed: onTap,
                 child: Text(action),
@@ -1001,7 +1018,7 @@ class _MapPageState extends State<MapPage> {
 
     return GlassSurface(
       padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(8),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1052,13 +1069,13 @@ class _MapPageState extends State<MapPage> {
   Widget _rosterLine(IconData icon, String text) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      Icon(icon, color: Colors.white, size: 18),
+      Icon(icon, color: _ink, size: 18),
       const SizedBox(width: 8),
       Flexible(
         child: Text(
           text,
           style: Theme.of(context).textTheme.labelLarge
-              ?.copyWith(color: Colors.white),
+              ?.copyWith(color: _ink),
         ),
       ),
     ],
@@ -1127,10 +1144,7 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
           FilledButton.icon(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size(200, 56),
-              shape: const StadiumBorder(),
-            ),
+            style: FilledButton.styleFrom(minimumSize: const Size(220, 54)),
             onPressed: () async {
               await _voice.enable();
               _voice.updatePeers(_latest);
@@ -1144,7 +1158,7 @@ class _MapPageState extends State<MapPage> {
     final on = _voice.talking;
     final target = _effectiveTarget();
     final private = target != VoiceController.everyone;
-    final accent = private ? const Color(0xFF7B3FE4) : scheme.primary;
+    final accent = private ? scheme.onSurface : scheme.primary;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1154,34 +1168,44 @@ class _MapPageState extends State<MapPage> {
           onPointerDown: (_) => _voice.setTalking(true, target: target),
           onPointerUp: (_) => _voice.setTalking(false),
           onPointerCancel: (_) => _voice.setTalking(false),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            width: on ? 104 : 92,
-            height: on ? 104 : 92,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: on ? const Color(0xFFD93025) : accent,
-              boxShadow: [
-                BoxShadow(
-                  color: (on ? const Color(0xFFD93025) : accent).withValues(
-                    alpha: 0.4,
-                  ),
-                  blurRadius: on ? 24 : 10,
-                  spreadRadius: on ? 6 : 0,
+          child: TalkPulse(
+            active: on,
+            color: RaastaColors.amber,
+            size: 92,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              curve: Curves.easeOutCubic,
+              width: on ? 100 : 92,
+              height: on ? 100 : 92,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: on
+                    ? RaastaColors.amber
+                    : const Color(0xFF0B0B0D).withValues(alpha: 0.82),
+                border: Border.all(
+                  color: on ? RaastaColors.amberLight : accent,
+                  width: on ? 1.4 : 1,
                 ),
-              ],
-            ),
-            child: Icon(
-              on ? Icons.mic : (private ? Icons.lock : Icons.mic_none),
-              color: Colors.white,
-              size: 44,
+                boxShadow: [
+                  BoxShadow(
+                    color: RaastaColors.amber.withValues(alpha: on ? 0.45 : 0.14),
+                    blurRadius: on ? 30 : 16,
+                    spreadRadius: on ? 4 : 0,
+                  ),
+                ],
+              ),
+              child: Icon(
+                on ? Icons.mic : (private ? Icons.lock_outline : Icons.mic_none),
+                color: on ? _ink : accent,
+                size: 38,
+              ),
             ),
           ),
         ),
         const SizedBox(height: 6),
         GlassSurface(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          borderRadius: BorderRadius.circular(14),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          borderRadius: BorderRadius.circular(6),
           blur: 12,
           child: Text(
             on
@@ -1189,7 +1213,10 @@ class _MapPageState extends State<MapPage> {
                 : private
                 ? 'Hold to talk privately to ${_nameOf(target)}'
                 : 'Hold to talk to everyone',
-            style: Theme.of(context).textTheme.labelSmall,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              letterSpacing: 1.2,
+              color: on ? RaastaColors.amberLight : null,
+            ),
           ),
         ),
         if (_voice.error != null)
@@ -1218,12 +1245,12 @@ class _RoundButton extends StatelessWidget {
       onTap: onTap,
       child: GlassSurface(
         padding: EdgeInsets.zero,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(23),
         blur: 14,
         child: SizedBox(
           width: 46,
           height: 46,
-          child: Icon(icon, color: color ?? scheme.onSurface),
+          child: Icon(icon, size: 21, color: color ?? scheme.onSurface),
         ),
       ),
     );
@@ -1267,17 +1294,7 @@ class _RiderChip extends StatelessWidget {
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: color,
-                    child: Text(
-                      rider.name.isEmpty ? '?' : rider.name[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  _Initial(name: rider.name, color: color, size: 40),
                   Positioned(
                     right: -3,
                     bottom: -3,
@@ -1293,7 +1310,7 @@ class _RiderChip extends StatelessWidget {
                   Text(
                     isMe ? '${rider.name} (you)' : rider.name,
                     style: Theme.of(context).textTheme.labelLarge
-                        ?.copyWith(fontSize: 13),
+                        ?.copyWith(fontSize: 13, letterSpacing: 0.6),
                   ),
                   Text(
                     stale
@@ -1316,6 +1333,43 @@ class _RiderChip extends StatelessWidget {
   }
 }
 
+/// Dark disc with a thin coloured ring and the rider's initial.
+class _Initial extends StatelessWidget {
+  final String name;
+  final Color color;
+  final double size;
+  final double fontSize;
+  const _Initial({
+    required this.name,
+    required this.color,
+    required this.size,
+    this.fontSize = 16,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFF16161A),
+        border: Border.all(color: color, width: 1.2),
+      ),
+      child: Text(
+        name.isEmpty ? '?' : name[0].toUpperCase(),
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          color: color,
+          fontSize: fontSize,
+          fontWeight: FontWeight.w400,
+          letterSpacing: 0,
+        ),
+      ),
+    );
+  }
+}
+
 class _RiderPin extends StatelessWidget {
   final String name;
   final Color color;
@@ -1330,7 +1384,7 @@ class _RiderPin extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fill = isMe ? const Color(0xFF1A73E8) : color;
+    final ring = isMe ? RaastaColors.amber : color;
     return Opacity(
       opacity: stale ? 0.5 : 1,
       child: Stack(
@@ -1342,42 +1396,46 @@ class _RiderPin extends StatelessWidget {
             height: 36,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: fill,
-              border: Border.all(color: Colors.white, width: 3),
-              boxShadow: const [
-                BoxShadow(color: Colors.black38, blurRadius: 6),
+              color: const Color(0xFF0B0B0D),
+              border: Border.all(color: ring, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: isMe
+                      ? RaastaColors.amber.withValues(alpha: 0.55)
+                      : Colors.black54,
+                  blurRadius: isMe ? 12 : 6,
+                ),
               ],
             ),
             alignment: Alignment.center,
             child: Text(
               name.isEmpty ? '?' : name[0].toUpperCase(),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+              style: TextStyle(
+                color: ring,
+                fontWeight: FontWeight.w400,
                 fontSize: 15,
               ),
             ),
           ),
           Positioned(
-            top: -20,
+            top: -22,
             left: -40,
             right: -40,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black26, blurRadius: 3),
-                  ],
+                  color: const Color(0xE60B0B0D),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: const Color(0x40FFFFFF), width: 0.6),
                 ),
                 child: Text(
                   name,
                   style: const TextStyle(
                     fontSize: 11,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFEDEBE8),
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: 0.8,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -1398,10 +1456,10 @@ class _MicBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = talking
-        ? const Color(0xFFD93025)
+        ? RaastaColors.amber
         : on
-        ? const Color(0xFF188038)
-        : Colors.grey.shade600;
+        ? const Color(0xFFE6E2DA)
+        : const Color(0xFF3A3A3F);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       width: talking ? 20 : 18,
@@ -1409,7 +1467,7 @@ class _MicBadge extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: color,
-        border: Border.all(color: Colors.white, width: 1.5),
+        border: Border.all(color: const Color(0xFF0B0B0D), width: 1.5),
         boxShadow: talking
             ? [BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 8)]
             : null,
@@ -1417,7 +1475,7 @@ class _MicBadge extends StatelessWidget {
       child: Icon(
         on ? Icons.mic : Icons.mic_off,
         size: 11,
-        color: Colors.white,
+        color: on ? _ink : const Color(0xFF9A9AA0),
       ),
     );
   }
