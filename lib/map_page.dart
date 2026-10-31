@@ -302,9 +302,7 @@ class _MapPageState extends State<MapPage> {
               ),
               children: [
                 TileLayer(
-                  urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-                  subdomains: const ['a', 'b', 'c', 'd'],
-                  retinaMode: RetinaMode.isHighDensity(context),
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   maxNativeZoom: 19,
                   userAgentPackageName: 'com.air.air_rider',
                 ),
@@ -365,7 +363,6 @@ class _MapPageState extends State<MapPage> {
                   alignment: AttributionAlignment.bottomLeft,
                   attributions: [
                     TextSourceAttribution('OpenStreetMap contributors'),
-                    TextSourceAttribution('CARTO'),
                   ],
                 ),
               ],
