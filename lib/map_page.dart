@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'group_service.dart';
 import 'audio_unlock.dart';
@@ -63,14 +64,38 @@ class _MapPageState extends State<MapPage> {
     super.initState();
     _startLocation();
     _ridersSub = widget.service.riders().listen((r) {
+      final before = {for (final x in _latest) x.id: x};
+      final firstBatch = !_gotRiders;
+      _gotRiders = true;
       setState(() => _latest = r);
       _voice.updatePeers(r);
+      if (firstBatch) return;
+      final me = widget.service.myId;
+      for (final x in r) {
+        if (x.id == me) continue;
+        final old = before[x.id];
+        if (old == null) {
+          _toast('${x.name} joined the ride');
+        } else if (!old.voiceOn && x.voiceOn) {
+          _toast('${x.name} is on voice');
+        }
+      }
+      for (final old in before.values) {
+        if (old.id != me && !r.any((x) => x.id == old.id)) {
+          _toast('${old.name} left the ride');
+        }
+      }
     });
     _routeSub = widget.service.route().listen(_onGroupRoute);
   }
 
   /// A route only I can see, which takes priority over the group's route.
   GroupRoute? _localRoute;
+
+  bool _gotRiders = false;
+  bool _setupDismissed = false;
+  bool _invited = false;
+  bool _allSetToastShown = false;
 
   /// Who my voice goes to: 'all' or one rider's id for a private talk.
   String _talkTarget = VoiceController.everyone;
@@ -289,6 +314,133 @@ class _MapPageState extends State<MapPage> {
       (r.talkTo == null ||
           r.talkTo == VoiceController.everyone ||
           r.talkTo == widget.service.myId);
+
+  void _toast(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 150),
+        ),
+      );
+  }
+
+  Future<void> _invite() async {
+    String link;
+    try {
+      link = Uri.base.origin + Uri.base.path;
+    } catch (_) {
+      link = 'the Raasta web app';
+    }
+    final text =
+        'Join my ride on Raasta! Open $link and enter the code ${widget.code}.';
+    setState(() => _invited = true);
+    try {
+      await SharePlus.instance.share(ShareParams(text: text));
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: text));
+      _toast('Invite copied. Paste it into WhatsApp or a message.');
+    }
+  }
+
+  void _showRiderSheet(Rider r) {
+    final isMe = r.id == widget.service.myId;
+    final canPrivate = !isMe && r.voiceOn && _voice.enabled;
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: _colorFor(r.id),
+                  child: Text(
+                    r.name.isEmpty ? '?' : r.name[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isMe ? '${r.name} (you)' : r.name,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Text(
+                        [
+                          if (!isMe) _distanceTo(r),
+                          r.voiceOn ? 'On voice' : 'Not on voice',
+                        ].where((e) => e.isNotEmpty).join(' · '),
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            FilledButton.tonalIcon(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(52),
+              ),
+              onPressed: () {
+                Navigator.pop(sheetContext);
+                _map.move(r.position, 16);
+              },
+              icon: const Icon(Icons.my_location),
+              label: const Text('Show on map'),
+            ),
+            if (!isMe) ...[
+              const SizedBox(height: 10),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
+                  backgroundColor: const Color(0xFF7B3FE4),
+                ),
+                onPressed: canPrivate
+                    ? () {
+                        Navigator.pop(sheetContext);
+                        setState(() => _talkTarget = r.id);
+                        _toast(
+                          'Hold the talk button to speak privately to ${r.name}',
+                        );
+                      }
+                    : null,
+                icon: const Icon(Icons.lock),
+                label: Text('Talk privately to ${r.name}'),
+              ),
+              if (!canPrivate)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    !_voice.enabled
+                        ? 'Turn on voice first (the mic button at the bottom).'
+                        : '${r.name} has not turned on voice yet. Ask them to tap Enable voice.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 
   Future<void> _leave() async {
     final yes = await showDialog<bool>(
@@ -531,6 +683,11 @@ class _MapPageState extends State<MapPage> {
                             ),
                           ),
                           IconButton(
+                            icon: const Icon(Icons.person_add_alt_1),
+                            tooltip: 'Invite friends',
+                            onPressed: _invite,
+                          ),
+                          IconButton(
                             icon: const Icon(Icons.directions),
                             tooltip: 'Plan a route',
                             onPressed: _planRide,
@@ -540,29 +697,23 @@ class _MapPageState extends State<MapPage> {
                     ),
                   ),
                 ),
-                if (_error != null)
-                  Positioned(
-                    top: 96,
-                    left: 16,
-                    right: 16,
-                    child: SafeArea(
-                      child: GlassSurface(
-                        padding: const EdgeInsets.all(14),
-                        borderRadius: BorderRadius.circular(16),
-                        tint: scheme.secondaryContainer.withValues(alpha: 0.85),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.info_outline_rounded,
-                              color: scheme.secondary,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(child: Text(_error!)),
-                          ],
-                        ),
+                Positioned(
+                  top: 84,
+                  left: 12,
+                  right: 12,
+                  child: SafeArea(
+                    child: ListenableBuilder(
+                      listenable: _voice,
+                      builder: (context, _) => Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_error != null && _me == null) _errorBanner(),
+                          _setupCard(),
+                        ],
                       ),
                     ),
                   ),
+                ),
                 // Map buttons
                 Positioned(
                   right: 12,
@@ -613,7 +764,7 @@ class _MapPageState extends State<MapPage> {
                                     stale: _isStale(r),
                                     voiceOn: r.voiceOn,
                                     talking: _heardByMe(r),
-                                    onTap: () => _map.move(r.position, 16),
+                                    onTap: () => _showRiderSheet(r),
                                   ),
                                 ),
                             ],
@@ -786,6 +937,118 @@ class _MapPageState extends State<MapPage> {
     );
   }
 
+  Widget _errorBanner() {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GlassSurface(
+        padding: const EdgeInsets.all(14),
+        borderRadius: BorderRadius.circular(16),
+        tint: scheme.secondaryContainer.withValues(alpha: 0.9),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline_rounded, color: scheme.secondary),
+            const SizedBox(width: 10),
+            Expanded(child: Text(_error!)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// First-run checklist: clear, upfront feedback on what is ready and what
+  /// still needs a tap.
+  Widget _setupCard() {
+    final locationOk = _me != null;
+    final voiceOk = _voice.enabled || widget.service.isDemo;
+    final inviteOk = _invited || _latest.length > 1;
+    final done = locationOk && voiceOk && inviteOk;
+    if (done && !_allSetToastShown) {
+      _allSetToastShown = true;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _toast('You are all set. Happy riding!'),
+      );
+    }
+    if (_setupDismissed || done) return const SizedBox();
+    final scheme = Theme.of(context).colorScheme;
+    Widget row(bool ok, String text, {String? action, VoidCallback? onTap}) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          children: [
+            Icon(
+              ok ? Icons.check_circle : Icons.radio_button_unchecked,
+              color: ok ? const Color(0xFF188038) : scheme.onSurfaceVariant,
+              size: 22,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
+            ),
+            if (!ok && action != null)
+              FilledButton.tonal(
+                style: FilledButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  minimumSize: const Size(0, 36),
+                ),
+                onPressed: onTap,
+                child: Text(action),
+              ),
+          ],
+        ),
+      );
+    }
+
+    return GlassSurface(
+      padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+      borderRadius: BorderRadius.circular(18),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Get ready to ride',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.close, size: 20),
+                tooltip: 'Hide',
+                onPressed: () => setState(() => _setupDismissed = true),
+              ),
+            ],
+          ),
+          row(
+            locationOk,
+            locationOk
+                ? 'Your location is live'
+                : (_error ?? 'Finding your location...'),
+          ),
+          row(
+            voiceOk,
+            voiceOk ? 'Voice is on' : 'Turn on voice to talk with the group',
+            action: 'Turn on',
+            onTap: () async {
+              await _voice.enable();
+              _voice.updatePeers(_latest);
+            },
+          ),
+          row(
+            inviteOk,
+            inviteOk
+                ? 'Friends invited'
+                : 'Invite friends with code ${widget.code}',
+            action: 'Invite',
+            onTap: _invite,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _rosterLine(IconData icon, String text) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
@@ -803,13 +1066,11 @@ class _MapPageState extends State<MapPage> {
 
   /// Choose who hears you: everyone, or one rider who is on voice.
   Widget _targetPicker() {
-    final others = _latest
-        .where((r) => r.id != widget.service.myId && r.voiceOn)
-        .toList();
+    final others = _latest.where((r) => r.id != widget.service.myId).toList();
     if (others.isEmpty) return const SizedBox();
     final target = _effectiveTarget();
     return SizedBox(
-      height: 44,
+      height: 48,
       child: ListView(
         scrollDirection: Axis.horizontal,
         shrinkWrap: true,
@@ -829,10 +1090,17 @@ class _MapPageState extends State<MapPage> {
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
-                avatar: const Icon(Icons.lock_outline, size: 16),
-                label: Text(r.name),
+                avatar: Icon(
+                  r.voiceOn ? Icons.lock_outline : Icons.mic_off,
+                  size: 16,
+                ),
+                label: Text(r.voiceOn ? r.name : '${r.name} (voice off)'),
                 selected: target == r.id,
-                onSelected: (_) => setState(() => _talkTarget = r.id),
+                onSelected: r.voiceOn
+                    ? (_) => setState(() => _talkTarget = r.id)
+                    : (_) => _toast(
+                        '${r.name} has not turned on voice yet. Ask them to tap Enable voice.',
+                      ),
               ),
             ),
         ],
@@ -888,8 +1156,8 @@ class _MapPageState extends State<MapPage> {
           onPointerCancel: (_) => _voice.setTalking(false),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
-            width: on ? 92 : 80,
-            height: on ? 92 : 80,
+            width: on ? 104 : 92,
+            height: on ? 104 : 92,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: on ? const Color(0xFFD93025) : accent,
@@ -906,7 +1174,7 @@ class _MapPageState extends State<MapPage> {
             child: Icon(
               on ? Icons.mic : (private ? Icons.lock : Icons.mic_none),
               color: Colors.white,
-              size: 38,
+              size: 44,
             ),
           ),
         ),
