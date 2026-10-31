@@ -85,165 +85,172 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   revealStagger(context, _HeroHeader(isDark: isDark), index: 0),
                   const SizedBox(height: 28),
-                  revealStagger(context, GlassSurface(
-                    padding: const EdgeInsets.fromLTRB(22, 26, 22, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        if (widget.service.isDemo) ...[
+                  revealStagger(
+                    context,
+                    GlassSurface(
+                      padding: const EdgeInsets.fromLTRB(22, 26, 22, 24),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (widget.service.isDemo) ...[
+                            revealStagger(
+                              context,
+                              _DemoBanner(scheme: scheme),
+                              index: 1,
+                            ),
+                            const SizedBox(height: 20),
+                          ],
                           revealStagger(
                             context,
-                            _DemoBanner(scheme: scheme),
-                            index: 1,
-                          ),
-                          const SizedBox(height: 20),
-                        ],
-                        revealStagger(
-                          context,
-                          TextField(
-                            controller: _name,
-                            textCapitalization: TextCapitalization.words,
-                            decoration: const InputDecoration(
-                              labelText: 'Your name',
-                              prefixIcon: Icon(Icons.person_outline_rounded),
-                            ),
-                          ),
-                          index: 2,
-                        ),
-                        const SizedBox(height: 18),
-                        revealStagger(
-                          context,
-                          PressableScale(
-                            onTap: _busy
-                                ? null
-                                : () => _run(
-                                    (n) => widget.service.createGroup(n),
-                                  ),
-                            child: FilledButton.icon(
-                              style: FilledButton.styleFrom(
-                                minimumSize: const Size.fromHeight(56),
-                                backgroundColor: scheme.primary,
-                                foregroundColor: scheme.onPrimary,
+                            TextField(
+                              controller: _name,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: const InputDecoration(
+                                labelText: 'Your name',
+                                prefixIcon: Icon(Icons.person_outline_rounded),
                               ),
-                              onPressed: _busy
+                            ),
+                            index: 2,
+                          ),
+                          const SizedBox(height: 18),
+                          revealStagger(
+                            context,
+                            PressableScale(
+                              onTap: _busy
                                   ? null
                                   : () => _run(
                                       (n) => widget.service.createGroup(n),
                                     ),
-                              icon: const Icon(Icons.add_rounded),
-                              label: const Text('Start a new group'),
-                            ),
-                          ),
-                          index: 3,
-                        ),
-                        const SizedBox(height: 28),
-                        revealStagger(
-                          context,
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Divider(
-                                  color: scheme.outline.withValues(alpha: 0.5),
+                              child: FilledButton.icon(
+                                style: FilledButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(56),
+                                  backgroundColor: scheme.primary,
+                                  foregroundColor: scheme.onPrimary,
                                 ),
-                              ),
-                              Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 12),
-                                child: Text(
-                                  'or join your friends',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(color: scheme.onSurfaceVariant),
-                                ),
-                              ),
-                              Expanded(
-                                child: Divider(
-                                  color: scheme.outline.withValues(alpha: 0.5),
-                                ),
-                              ),
-                            ],
-                          ),
-                          index: 4,
-                        ),
-                        const SizedBox(height: 22),
-                        revealStagger(
-                          context,
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: _code,
-                                  keyboardType: TextInputType.number,
-                                  maxLength: 4,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                  ],
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    letterSpacing: 10,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  decoration: const InputDecoration(
-                                    labelText: '4-digit group code',
-                                    prefixIcon: Icon(Icons.pin_outlined),
-                                    counterText: '',
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              PressableScale(
-                                onTap: _busy
+                                onPressed: _busy
                                     ? null
-                                    : () => _run((n) async {
+                                    : () => _run(
+                                        (n) => widget.service.createGroup(n),
+                                      ),
+                                icon: const Icon(Icons.add_rounded),
+                                label: const Text('Start a new group'),
+                              ),
+                            ),
+                            index: 3,
+                          ),
+                          const SizedBox(height: 28),
+                          revealStagger(
+                            context,
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Divider(
+                                    color: scheme.outline.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  child: Text(
+                                    'or join your friends',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: scheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Divider(
+                                    color: scheme.outline.withValues(
+                                      alpha: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            index: 4,
+                          ),
+                          const SizedBox(height: 22),
+                          revealStagger(
+                            context,
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: _code,
+                                    keyboardType: TextInputType.number,
+                                    maxLength: 4,
+                                    inputFormatters: [
+                                      FilteringTextInputFormatter.digitsOnly,
+                                    ],
+                                    style: const TextStyle(
+                                      fontSize: 22,
+                                      letterSpacing: 10,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    decoration: const InputDecoration(
+                                      labelText: '4-digit group code',
+                                      prefixIcon: Icon(Icons.pin_outlined),
+                                      counterText: '',
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                PressableScale(
+                                  onTap: _busy
+                                      ? null
+                                      : () => _run((n) async {
                                           final code = _code.text.trim();
                                           final ok = await widget.service
                                               .joinGroup(code, n);
                                           return ok ? code : null;
                                         }),
-                                child: SizedBox(
-                                  height: 58,
-                                  child: OutlinedButton(
-                                    onPressed: _busy
-                                        ? null
-                                        : () => _run((n) async {
+                                  child: SizedBox(
+                                    height: 58,
+                                    child: OutlinedButton(
+                                      onPressed: _busy
+                                          ? null
+                                          : () => _run((n) async {
                                               final code = _code.text.trim();
                                               final ok = await widget.service
                                                   .joinGroup(code, n);
                                               return ok ? code : null;
                                             }),
-                                    child: const Text('Join'),
+                                      child: const Text('Join'),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
+                            index: 5,
                           ),
-                          index: 5,
-                        ),
-                        if (_busy) ...[
-                          const SizedBox(height: 24),
-                          Center(
-                            child: SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                color: scheme.primary,
+                          if (_busy) ...[
+                            const SizedBox(height: 24),
+                            Center(
+                              child: SizedBox(
+                                width: 28,
+                                height: 28,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                  color: scheme.primary,
+                                ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ), index: 1),
-                  const SizedBox(height: 24),
-                  revealStagger(
-                    context,
-                    _FeatureRow(scheme: scheme),
-                    index: 6,
+                    index: 1,
                   ),
+                  const SizedBox(height: 24),
+                  revealStagger(context, _FeatureRow(scheme: scheme), index: 6),
                 ],
               ),
             ),
@@ -269,10 +276,7 @@ class _HeroHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            scheme.primary,
-            RaastaColors.coral.withValues(alpha: 0.9),
-          ],
+          colors: [scheme.primary, RaastaColors.coral.withValues(alpha: 0.9)],
         ),
         boxShadow: [
           BoxShadow(
@@ -320,9 +324,9 @@ class _HeroHeader extends StatelessWidget {
           'Ride together. See each other. Talk.',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: scheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
-              ),
+            color: scheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -356,10 +360,8 @@ class _DemoBanner extends StatelessWidget {
             child: Text(
               'Demo mode: Firebase is not set up, so two simulated '
               'riders will appear around you.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurface,
-                    height: 1.4,
-                  ),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: scheme.onSurface, height: 1.4),
             ),
           ),
         ],
@@ -391,9 +393,9 @@ class _FeatureRow extends StatelessWidget {
                 label,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: scheme.onSurfaceVariant,
-                    ),
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurfaceVariant,
+                ),
               ),
             ],
           ),

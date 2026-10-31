@@ -26,7 +26,9 @@ class _PressableScaleState extends State<PressableScale> {
   Widget build(BuildContext context) {
     final duration = motionDuration(context, const Duration(milliseconds: 120));
     return GestureDetector(
-      onTapDown: widget.onTap == null ? null : (_) => setState(() => _down = true),
+      onTapDown: widget.onTap == null
+          ? null
+          : (_) => setState(() => _down = true),
       onTapUp: widget.onTap == null
           ? null
           : (_) {

@@ -22,7 +22,8 @@ class GlassSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final fill = tint ??
+    final fill =
+        tint ??
         scheme.surfaceContainerHighest.withValues(
           alpha: Theme.of(context).brightness == Brightness.dark ? 0.72 : 0.65,
         );
@@ -34,9 +35,7 @@ class GlassSurface extends StatelessWidget {
           decoration: BoxDecoration(
             color: fill,
             borderRadius: borderRadius,
-            border: Border.all(
-              color: scheme.outline.withValues(alpha: 0.35),
-            ),
+            border: Border.all(color: scheme.outline.withValues(alpha: 0.35)),
             boxShadow: [
               BoxShadow(
                 color: scheme.shadow,

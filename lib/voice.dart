@@ -30,7 +30,10 @@ class VoiceController extends ChangeNotifier {
     notifyListeners();
   }
 
-  static String _s(String id) => id.length > 4 ? id.substring(0, 4) : id;
+  /// Rider names by id, so logs and status show names instead of codes.
+  final _names = <String, String>{};
+
+  String _s(String id) => _names[id] ?? 'a rider';
 
   MediaStream? _local;
   StreamSubscription<Signal>? _sig;
@@ -54,9 +57,8 @@ class VoiceController extends ChangeNotifier {
       _mute(true);
       enabled = true;
       error = null;
-      _log(
-        'mic on, me=${_s(service.myId)}, relay=${_iceServers.length > 1 ? 'yes' : 'no'}',
-      );
+      _log('mic on, relay=${_iceServers.length > 1 ? 'yes' : 'no'}');
+      service.setVoiceState(enabled: true, talking: false);
       _sig = service.signals().listen(
         _onSignal,
         onError: (e) => _fail('Voice error: $e'),
@@ -84,12 +86,16 @@ class VoiceController extends ChangeNotifier {
     if (!enabled || talking == on) return;
     talking = on;
     _mute(!on);
+    service.setVoiceState(enabled: true, talking: on);
     notifyListeners();
   }
 
   /// Call whenever the rider list changes. The rider with the smaller id
   /// starts each call so the two sides never both send offers.
   void updatePeers(List<Rider> riders) {
+    for (final r in riders) {
+      _names[r.id] = r.name;
+    }
     if (!enabled) return;
     final ids = riders
         .map((r) => r.id)

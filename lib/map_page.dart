@@ -242,6 +242,13 @@ class _MapPageState extends State<MapPage> {
   bool _isStale(Rider r) =>
       DateTime.now().difference(r.updatedAt).inSeconds > 90;
 
+  String _nameOf(String id) {
+    for (final r in _latest) {
+      if (r.id == id) return r.name;
+    }
+    return 'a rider';
+  }
+
   void _showVoiceDetails() {
     showModalBottomSheet(
       context: context,
@@ -261,7 +268,7 @@ class _MapPageState extends State<MapPage> {
               if (_voice.status.isEmpty && _voice.log.isEmpty)
                 const Text('Nothing yet. Tap Enable voice first.'),
               for (final e in _voice.status.entries)
-                Text('${e.key.substring(0, 4)}: ${e.value}'),
+                Text('${_nameOf(e.key)}: ${e.value}'),
               const Divider(),
               for (final l in _voice.log)
                 Text(l, style: Theme.of(context).textTheme.bodySmall),
@@ -379,16 +386,23 @@ class _MapPageState extends State<MapPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: GlassSurface(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
                     borderRadius: BorderRadius.circular(28),
                     child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.arrow_back),
-                            tooltip: 'Leave group',
-                            onPressed: () => Navigator.of(context).pop(),
-                          ),
-                          Expanded(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back),
+                          tooltip: 'Leave group',
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            // Hidden: long-press the title for connection details.
+                            onLongPress: _showVoiceDetails,
+                            behavior: HitTestBehavior.opaque,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
@@ -407,33 +421,27 @@ class _MapPageState extends State<MapPage> {
                               ],
                             ),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.directions),
-                            tooltip: 'Plan a ride',
-                            onPressed: _planRide,
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.copy),
-                            tooltip: 'Copy group code',
-                            onPressed: () {
-                              Clipboard.setData(
-                                ClipboardData(text: widget.code),
-                              );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Code copied')),
-                              );
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.info_outline),
-                            tooltip: 'Voice details',
-                            onPressed: _showVoiceDetails,
-                          ),
-                        ],
-                      ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.directions),
+                          tooltip: 'Plan a ride',
+                          onPressed: _planRide,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.copy),
+                          tooltip: 'Copy group code',
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: widget.code));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Code copied')),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ),
+              ),
               if (_error != null)
                 Positioned(
                   top: 96,
@@ -446,7 +454,10 @@ class _MapPageState extends State<MapPage> {
                       tint: scheme.secondaryContainer.withValues(alpha: 0.85),
                       child: Row(
                         children: [
-                          Icon(Icons.info_outline_rounded, color: scheme.secondary),
+                          Icon(
+                            Icons.info_outline_rounded,
+                            color: scheme.secondary,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(child: Text(_error!)),
                         ],
@@ -502,6 +513,8 @@ class _MapPageState extends State<MapPage> {
                                       ? 'you'
                                       : _distanceTo(r),
                                   stale: _isStale(r),
+                                  voiceOn: r.voiceOn,
+                                  talking: r.talking,
                                   onTap: () => _map.move(r.position, 16),
                                 ),
                               ),
@@ -521,7 +534,14 @@ class _MapPageState extends State<MapPage> {
                                 height: 1,
                                 child: RTCVideoView(r),
                               ),
-                            _voiceControl(),
+                            Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _voiceRoster(),
+                                const SizedBox(height: 8),
+                                _voiceControl(),
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -565,9 +585,8 @@ class _MapPageState extends State<MapPage> {
                         (info == null
                             ? 'Finding route...'
                             : '${info.distanceText} · ${info.durationText} by car'),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(color: scheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -595,6 +614,63 @@ class _MapPageState extends State<MapPage> {
         ),
       ),
       child: KeyedSubtree(key: ValueKey(r.dest.name), child: card),
+    );
+  }
+
+  /// Who is on voice and who is talking, by name, right on the main screen.
+  Widget _voiceRoster() {
+    if (widget.service.isDemo && _latest.isEmpty) return const SizedBox();
+    final scheme = Theme.of(context).colorScheme;
+    final others = _latest.where((r) => r.id != widget.service.myId).toList();
+    if (others.isEmpty) return const SizedBox();
+    final talkers = others.where((r) => r.talking).map((r) => r.name).toList();
+    final onVoice = others.where((r) => r.voiceOn).map((r) => r.name).toList();
+    final offVoice = others
+        .where((r) => !r.voiceOn)
+        .map((r) => r.name)
+        .toList();
+    final talkingNow = talkers.isNotEmpty;
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      child: GlassSurface(
+        key: ValueKey('$talkers|$onVoice|$offVoice'),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        borderRadius: BorderRadius.circular(18),
+        blur: 14,
+        tint: talkingNow ? scheme.primary.withValues(alpha: 0.85) : null,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (talkingNow)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.graphic_eq, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${talkers.join(', ')} ${talkers.length == 1 ? 'is' : 'are'} talking',
+                    style: Theme.of(context).textTheme.labelLarge
+                        ?.copyWith(color: Colors.white),
+                  ),
+                ],
+              )
+            else ...[
+              Text(
+                onVoice.isEmpty
+                    ? 'Nobody else is on voice yet'
+                    : 'On voice: ${onVoice.join(', ')}',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
+              if (offVoice.isNotEmpty && onVoice.isNotEmpty)
+                Text(
+                  'Not on voice: ${offVoice.join(', ')}',
+                  style: Theme.of(context).textTheme.labelSmall
+                      ?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
@@ -668,11 +744,7 @@ class _MapPageState extends State<MapPage> {
           borderRadius: BorderRadius.circular(14),
           blur: 12,
           child: Text(
-            on
-                ? 'Talking...'
-                : _voice.connected == 0
-                ? 'Hold to talk · nobody linked yet'
-                : 'Hold to talk · ${_voice.connected} linked',
+            on ? 'Talking...' : 'Hold to talk',
             style: Theme.of(context).textTheme.labelSmall,
           ),
         ),
@@ -720,6 +792,8 @@ class _RiderChip extends StatelessWidget {
   final bool isMe;
   final String distance;
   final bool stale;
+  final bool voiceOn;
+  final bool talking;
   final VoidCallback onTap;
   const _RiderChip({
     required this.rider,
@@ -727,6 +801,8 @@ class _RiderChip extends StatelessWidget {
     required this.isMe,
     required this.distance,
     required this.stale,
+    required this.voiceOn,
+    required this.talking,
     required this.onTap,
   });
 
@@ -744,16 +820,26 @@ class _RiderChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: color,
-                child: Text(
-                  rider.name.isEmpty ? '?' : rider.name[0].toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(
+                    radius: 20,
+                    backgroundColor: color,
+                    child: Text(
+                      rider.name.isEmpty ? '?' : rider.name[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
+                  Positioned(
+                    right: -3,
+                    bottom: -3,
+                    child: _MicBadge(on: voiceOn, talking: talking),
+                  ),
+                ],
               ),
               const SizedBox(width: 8),
               Column(
@@ -762,15 +848,19 @@ class _RiderChip extends StatelessWidget {
                 children: [
                   Text(
                     isMe ? '${rider.name} (you)' : rider.name,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontSize: 13,
-                        ),
+                    style: Theme.of(context).textTheme.labelLarge
+                        ?.copyWith(fontSize: 13),
                   ),
                   Text(
-                    stale ? '$distance · last seen' : distance,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
+                    stale
+                        ? '$distance · last seen'
+                        : '$distance · ${talking
+                              ? 'talking'
+                              : voiceOn
+                              ? 'voice on'
+                              : 'voice off'}',
+                    style: Theme.of(context).textTheme.labelSmall
+                        ?.copyWith(color: scheme.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -851,6 +941,39 @@ class _RiderPin extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MicBadge extends StatelessWidget {
+  final bool on;
+  final bool talking;
+  const _MicBadge({required this.on, required this.talking});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = talking
+        ? const Color(0xFFD93025)
+        : on
+        ? const Color(0xFF188038)
+        : Colors.grey.shade600;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      width: talking ? 20 : 18,
+      height: talking ? 20 : 18,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        border: Border.all(color: Colors.white, width: 1.5),
+        boxShadow: talking
+            ? [BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 8)]
+            : null,
+      ),
+      child: Icon(
+        on ? Icons.mic : Icons.mic_off,
+        size: 11,
+        color: Colors.white,
       ),
     );
   }

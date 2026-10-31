@@ -36,9 +36,7 @@ ThemeData buildRaastaTheme({required Brightness brightness}) {
     onSurfaceVariant: isDark
         ? const Color(0xFF94A3B8)
         : const Color(0xFF64748B),
-    outline: isDark
-        ? const Color(0xFF334155)
-        : const Color(0xFFCBD5E1),
+    outline: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1),
     shadow: Colors.black.withValues(alpha: isDark ? 0.5 : 0.12),
   );
 
@@ -106,9 +104,7 @@ ThemeData buildRaastaTheme({required Brightness brightness}) {
       style: FilledButton.styleFrom(
         elevation: 0,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         textStyle: GoogleFonts.plusJakartaSans(
           fontWeight: FontWeight.w700,
           fontSize: 16,
@@ -118,9 +114,7 @@ ThemeData buildRaastaTheme({required Brightness brightness}) {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         side: BorderSide(color: scheme.outline),
       ),
     ),

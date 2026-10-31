@@ -113,16 +113,12 @@ class _DirectionsSheetState extends State<DirectionsSheet> {
               ),
             ),
           ),
-          Text(
-            'Plan a ride',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          Text('Plan a ride', style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 4),
           Text(
             'Pick a route for everyone in your group',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: scheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -130,7 +126,10 @@ class _DirectionsSheetState extends State<DirectionsSheet> {
             onTap: () => _editingStart = true,
             onChanged: (t) => _onChanged(t, true),
             decoration: InputDecoration(
-              prefixIcon: Icon(Icons.trip_origin_rounded, color: scheme.primary),
+              prefixIcon: Icon(
+                Icons.trip_origin_rounded,
+                color: scheme.primary,
+              ),
               labelText: 'Start',
               suffixIcon: widget.me == null
                   ? null
@@ -169,12 +168,10 @@ class _DirectionsSheetState extends State<DirectionsSheet> {
               children: [
                 for (var i = 0; i < _results.length; i++)
                   _ResultTile(
-                    place: _results[i],
-                    onTap: () => _choose(_results[i]),
-                  )
-                      .animate(
-                        autoPlay: motionEnabled(context),
+                        place: _results[i],
+                        onTap: () => _choose(_results[i]),
                       )
+                      .animate(autoPlay: motionEnabled(context))
                       .fadeIn(duration: 280.ms, delay: (40 * i).ms)
                       .slideX(begin: 0.04, end: 0),
               ],
@@ -212,7 +209,11 @@ class _ResultTile extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         borderRadius: BorderRadius.circular(12),
         blur: 8,
-        child: Icon(Icons.location_on_outlined, color: scheme.primary, size: 20),
+        child: Icon(
+          Icons.location_on_outlined,
+          color: scheme.primary,
+          size: 20,
+        ),
       ),
       title: Text(place.name),
       onTap: onTap,

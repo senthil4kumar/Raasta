@@ -80,7 +80,10 @@ class _MeshPainter extends CustomPainter {
       final cy = size.height * (0.25 + 0.2 * math.cos(t * math.pi * 2 + oy));
       final paint = Paint()
         ..shader = RadialGradient(
-          colors: [c.withValues(alpha: isDark ? 0.35 : 0.28), c.withValues(alpha: 0)],
+          colors: [
+            c.withValues(alpha: isDark ? 0.35 : 0.28),
+            c.withValues(alpha: 0),
+          ],
         ).createShader(Rect.fromCircle(center: Offset(cx, cy), radius: r));
       canvas.drawCircle(Offset(cx, cy), r, paint);
     }

@@ -22,6 +22,9 @@ abstract class GroupService {
   Future<bool> joinGroup(String code, String name);
 
   Future<void> updateLocation(LatLng position);
+
+  /// Tells the group whether I'm on voice and whether I'm talking right now.
+  Future<void> setVoiceState({required bool enabled, required bool talking});
   Stream<List<Rider>> riders();
   Future<void> leave();
 
@@ -111,6 +114,10 @@ class FirebaseGroupService implements GroupService {
   });
 
   @override
+  Future<void> setVoiceState({required bool enabled, required bool talking}) =>
+      _member().update({'voice': enabled, 'talking': enabled && talking});
+
+  @override
   Stream<List<Rider>> riders() {
     return _db.ref('groups/$_code/riders').onValue.map((event) {
       final out = <Rider>[];
@@ -129,6 +136,8 @@ class FirebaseGroupService implements GroupService {
                 updatedAt: DateTime.fromMillisecondsSinceEpoch(
                   (v['ts'] as num?)?.toInt() ?? 0,
                 ),
+                voiceOn: v['voice'] == true,
+                talking: v['talking'] == true,
               ),
             );
           }
@@ -249,7 +258,14 @@ class DemoGroupService implements GroupService {
     );
     _controller.add([
       Rider(id: 'me', name: _name, position: me, updatedAt: now),
-      Rider(id: 'a', name: 'Arjun', position: orbit(0.004, 0), updatedAt: now),
+      Rider(
+        id: 'a',
+        name: 'Arjun',
+        position: orbit(0.004, 0),
+        updatedAt: now,
+        voiceOn: true,
+        talking: sin(_t * 0.7) > 0.8,
+      ),
       Rider(
         id: 'b',
         name: 'Meera',
@@ -264,6 +280,12 @@ class DemoGroupService implements GroupService {
     _me = position;
     _emit();
   }
+
+  @override
+  Future<void> setVoiceState({
+    required bool enabled,
+    required bool talking,
+  }) async {}
 
   @override
   Stream<List<Rider>> riders() => _controller.stream;

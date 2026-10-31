@@ -3,11 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart' as fa;
 
 import '../theme/app_theme.dart';
 
-Widget revealStagger(
-  BuildContext context,
-  Widget child, {
-  required int index,
-}) {
+Widget revealStagger(BuildContext context, Widget child, {required int index}) {
   if (!motionEnabled(context)) return child;
   return fa.Animate(
     delay: Duration(milliseconds: 80 * index),
