@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'group_service.dart';
+import 'audio_unlock.dart';
 import 'directions_sheet.dart';
 import 'rider.dart';
 import 'routing.dart';
@@ -288,241 +289,247 @@ class _MapPageState extends State<MapPage> {
         focusNode: _focus,
         autofocus: true,
         onKeyEvent: _onKey,
-        child: Stack(
-          children: [
-            FlutterMap(
-              mapController: _map,
-              options: MapOptions(
-                initialCenter: const LatLng(20.5937, 78.9629),
-                initialZoom: 4,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                ),
-                onTap: (_, _) => _focus.requestFocus(),
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  maxNativeZoom: 19,
-                  userAgentPackageName: 'com.air.air_rider',
-                ),
-                if (_routeInfo != null)
-                  PolylineLayer(
-                    polylines: [
-                      Polyline(
-                        points: _routeInfo!.points,
-                        strokeWidth: 6,
-                        color: const Color(0xFF1A73E8),
-                        borderStrokeWidth: 2,
-                        borderColor: Colors.white,
-                      ),
-                    ],
+        child: Listener(
+          onPointerDown: (_) => resumeAllAudio(),
+          child: Stack(
+            children: [
+              FlutterMap(
+                mapController: _map,
+                options: MapOptions(
+                  initialCenter: const LatLng(20.5937, 78.9629),
+                  initialZoom: 4,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                   ),
-                if (_groupRoute != null)
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: _groupRoute!.start.pos,
-                        width: 24,
-                        height: 24,
-                        child: const Icon(
-                          Icons.trip_origin,
-                          color: Color(0xFF188038),
-                        ),
-                      ),
-                      Marker(
-                        point: _groupRoute!.dest.pos,
-                        width: 40,
-                        height: 40,
-                        alignment: Alignment.topCenter,
-                        child: const Icon(
-                          Icons.place,
-                          size: 40,
-                          color: Color(0xFFD93025),
-                        ),
-                      ),
-                    ],
+                  onTap: (_, _) => _focus.requestFocus(),
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    maxNativeZoom: 19,
+                    userAgentPackageName: 'com.air.air_rider',
                   ),
-                MarkerLayer(
-                  markers: [
-                    for (final r in _latest)
-                      Marker(
-                        point: r.position,
-                        width: 44,
-                        height: 44,
-                        child: _RiderPin(
-                          name: r.name,
-                          color: _colorFor(r.id),
-                          isMe: r.id == widget.service.myId,
-                          stale: _isStale(r),
-                        ),
-                      ),
-                  ],
-                ),
-                const RichAttributionWidget(
-                  alignment: AttributionAlignment.bottomLeft,
-                  attributions: [
-                    TextSourceAttribution('OpenStreetMap contributors'),
-                  ],
-                ),
-              ],
-            ),
-            // Top bar
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Material(
-                  elevation: 4,
-                  borderRadius: BorderRadius.circular(28),
-                  color: scheme.surface,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back),
-                          tooltip: 'Leave group',
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Group ${widget.code}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              Text(
-                                '${_latest.length} rider${_latest.length == 1 ? '' : 's'} on the map',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.directions),
-                          tooltip: 'Plan a ride',
-                          onPressed: _planRide,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.copy),
-                          tooltip: 'Copy group code',
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: widget.code));
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Code copied')),
-                            );
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.info_outline),
-                          tooltip: 'Voice details',
-                          onPressed: _showVoiceDetails,
+                  if (_routeInfo != null)
+                    PolylineLayer(
+                      polylines: [
+                        Polyline(
+                          points: _routeInfo!.points,
+                          strokeWidth: 6,
+                          color: const Color(0xFF1A73E8),
+                          borderStrokeWidth: 2,
+                          borderColor: Colors.white,
                         ),
                       ],
                     ),
-                  ),
-                ),
-              ),
-            ),
-            if (_error != null)
-              Positioned(
-                top: 96,
-                left: 16,
-                right: 16,
-                child: SafeArea(
-                  child: Material(
-                    elevation: 3,
-                    borderRadius: BorderRadius.circular(12),
-                    color: scheme.secondaryContainer,
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(_error!),
+                  if (_groupRoute != null)
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: _groupRoute!.start.pos,
+                          width: 24,
+                          height: 24,
+                          child: const Icon(
+                            Icons.trip_origin,
+                            color: Color(0xFF188038),
+                          ),
+                        ),
+                        Marker(
+                          point: _groupRoute!.dest.pos,
+                          width: 40,
+                          height: 40,
+                          alignment: Alignment.topCenter,
+                          child: const Icon(
+                            Icons.place,
+                            size: 40,
+                            color: Color(0xFFD93025),
+                          ),
+                        ),
+                      ],
                     ),
+                  MarkerLayer(
+                    markers: [
+                      for (final r in _latest)
+                        Marker(
+                          point: r.position,
+                          width: 44,
+                          height: 44,
+                          child: _RiderPin(
+                            name: r.name,
+                            color: _colorFor(r.id),
+                            isMe: r.id == widget.service.myId,
+                            stale: _isStale(r),
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-              ),
-            // Map buttons
-            Positioned(
-              right: 12,
-              bottom: 210,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _RoundButton(icon: Icons.add, onTap: () => _zoom(1)),
-                  const SizedBox(height: 8),
-                  _RoundButton(icon: Icons.remove, onTap: () => _zoom(-1)),
-                  const SizedBox(height: 8),
-                  _RoundButton(icon: Icons.fit_screen, onTap: _fitAll),
-                  const SizedBox(height: 8),
-                  _RoundButton(
-                    icon: Icons.my_location,
-                    onTap: _recenter,
-                    color: scheme.primary,
+                  const RichAttributionWidget(
+                    alignment: AttributionAlignment.bottomLeft,
+                    attributions: [
+                      TextSourceAttribution('OpenStreetMap contributors'),
+                    ],
                   ),
                 ],
               ),
-            ),
-            // Bottom: rider chips and voice
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: SafeArea(
+              // Top bar
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(28),
+                    color: scheme.surface,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.arrow_back),
+                            tooltip: 'Leave group',
+                            onPressed: () => Navigator.of(context).pop(),
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Group ${widget.code}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                Text(
+                                  '${_latest.length} rider${_latest.length == 1 ? '' : 's'} on the map',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.directions),
+                            tooltip: 'Plan a ride',
+                            onPressed: _planRide,
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy),
+                            tooltip: 'Copy group code',
+                            onPressed: () {
+                              Clipboard.setData(
+                                ClipboardData(text: widget.code),
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Code copied')),
+                              );
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.info_outline),
+                            tooltip: 'Voice details',
+                            onPressed: _showVoiceDetails,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              if (_error != null)
+                Positioned(
+                  top: 96,
+                  left: 16,
+                  right: 16,
+                  child: SafeArea(
+                    child: Material(
+                      elevation: 3,
+                      borderRadius: BorderRadius.circular(12),
+                      color: scheme.secondaryContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Text(_error!),
+                      ),
+                    ),
+                  ),
+                ),
+              // Map buttons
+              Positioned(
+                right: 12,
+                bottom: 210,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (_groupRoute != null) _routeCard(),
-                    SizedBox(
-                      height: 56,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        children: [
-                          for (final r in _latest)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: _RiderChip(
-                                rider: r,
-                                color: _colorFor(r.id),
-                                isMe: r.id == widget.service.myId,
-                                distance: r.id == widget.service.myId
-                                    ? 'you'
-                                    : _distanceTo(r),
-                                stale: _isStale(r),
-                                onTap: () => _map.move(r.position, 16),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
+                    _RoundButton(icon: Icons.add, onTap: () => _zoom(1)),
                     const SizedBox(height: 8),
-                    ListenableBuilder(
-                      listenable: _voice,
-                      builder: (context, _) => Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Remote audio plays through these invisible elements.
-                          for (final r in _voice.renderers.values)
-                            SizedBox(
-                              width: 1,
-                              height: 1,
-                              child: RTCVideoView(r),
-                            ),
-                          _voiceControl(),
-                        ],
-                      ),
+                    _RoundButton(icon: Icons.remove, onTap: () => _zoom(-1)),
+                    const SizedBox(height: 8),
+                    _RoundButton(icon: Icons.fit_screen, onTap: _fitAll),
+                    const SizedBox(height: 8),
+                    _RoundButton(
+                      icon: Icons.my_location,
+                      onTap: _recenter,
+                      color: scheme.primary,
                     ),
-                    const SizedBox(height: 12),
                   ],
                 ),
               ),
-            ),
-          ],
+              // Bottom: rider chips and voice
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: SafeArea(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_groupRoute != null) _routeCard(),
+                      SizedBox(
+                        height: 56,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          children: [
+                            for (final r in _latest)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: _RiderChip(
+                                  rider: r,
+                                  color: _colorFor(r.id),
+                                  isMe: r.id == widget.service.myId,
+                                  distance: r.id == widget.service.myId
+                                      ? 'you'
+                                      : _distanceTo(r),
+                                  stale: _isStale(r),
+                                  onTap: () => _map.move(r.position, 16),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ListenableBuilder(
+                        listenable: _voice,
+                        builder: (context, _) => Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Remote audio plays through these invisible elements.
+                            for (final r in _voice.renderers.values)
+                              SizedBox(
+                                width: 1,
+                                height: 1,
+                                child: RTCVideoView(r),
+                              ),
+                            _voiceControl(),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

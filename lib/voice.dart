@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 import 'group_service.dart';
+import 'audio_unlock.dart';
 import 'rider.dart';
 import 'voice_config.dart';
 
@@ -79,6 +80,7 @@ class VoiceController extends ChangeNotifier {
   }
 
   void setTalking(bool on) {
+    resumeAllAudio();
     if (!enabled || talking == on) return;
     talking = on;
     _mute(!on);
@@ -138,6 +140,7 @@ class VoiceController extends ChangeNotifier {
     if (!renderers.containsKey(id)) await r.initialize();
     r.srcObject = stream;
     renderers[id] = r;
+    resumeAllAudio();
     notifyListeners();
   }
 
