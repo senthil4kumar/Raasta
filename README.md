@@ -1,4 +1,4 @@
-# Hogona
+# Raasta
 
 Rider companion app (iOS + Android, Flutter). Phase I prototype.
 

@@ -1,11 +1,11 @@
 {
-    "name": "Hogona",
-    "short_name": "Hogona",
+    "name": "Raasta",
+    "short_name": "Raasta",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Hogona: ride together, see each other, talk.",
+    "description": "Raasta: ride together, see each other, talk.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
