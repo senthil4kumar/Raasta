@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   testWidgets('home screen shows create and join', (tester) async {
     await tester.pumpWidget(AirApp(service: DemoGroupService()));
-    expect(find.text('Create group'), findsOneWidget);
-    expect(find.text('Join group'), findsOneWidget);
+    expect(find.text('Start a new group'), findsOneWidget);
+    expect(find.text('Join'), findsOneWidget);
   });
 }

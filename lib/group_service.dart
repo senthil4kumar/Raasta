@@ -6,6 +6,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'rider.dart';
+import 'routing.dart';
 
 /// Group membership and live locations. Two backends: Firebase for real
 /// phones, and an offline demo that simulates riders so the app can be tried
@@ -24,9 +25,20 @@ abstract class GroupService {
   Stream<List<Rider>> riders();
   Future<void> leave();
 
+  /// The group's shared start and destination, or null when none is set.
+  Stream<GroupRoute?> route();
+  Future<void> setRoute(Place start, Place dest);
+  Future<void> clearRoute();
+
   /// Voice call set-up messages addressed to me (WebRTC offers, answers, ICE).
   Stream<Signal> signals();
   Future<void> sendSignal(String to, Map<String, dynamic> data);
+}
+
+class GroupRoute {
+  final Place start;
+  final Place dest;
+  const GroupRoute(this.start, this.dest);
 }
 
 class Signal {
@@ -134,6 +146,34 @@ class FirebaseGroupService implements GroupService {
   }
 
   @override
+  Stream<GroupRoute?> route() {
+    return _db.ref('groups/$_code/route').onValue.map((event) {
+      final v = event.snapshot.value;
+      if (v is! Map) return null;
+      double n(String k) => (v[k] as num).toDouble();
+      return GroupRoute(
+        Place(v['sName'] as String, LatLng(n('sLat'), n('sLng'))),
+        Place(v['dName'] as String, LatLng(n('dLat'), n('dLng'))),
+      );
+    });
+  }
+
+  @override
+  Future<void> setRoute(Place start, Place dest) =>
+      _db.ref('groups/$_code/route').set({
+        'sName': start.name,
+        'sLat': start.pos.latitude,
+        'sLng': start.pos.longitude,
+        'dName': dest.name,
+        'dLat': dest.pos.latitude,
+        'dLng': dest.pos.longitude,
+        'by': _name,
+      });
+
+  @override
+  Future<void> clearRoute() => _db.ref('groups/$_code/route').remove();
+
+  @override
   Stream<Signal> signals() async* {
     final inbox = _db.ref('groups/$_code/rtc/$myId');
     await for (final e in inbox.onChildAdded) {
@@ -230,6 +270,27 @@ class DemoGroupService implements GroupService {
 
   @override
   Future<void> leave() async => _timer?.cancel();
+
+  GroupRoute? _route;
+  final _routeCtl = StreamController<GroupRoute?>.broadcast();
+
+  @override
+  Stream<GroupRoute?> route() async* {
+    yield _route;
+    yield* _routeCtl.stream;
+  }
+
+  @override
+  Future<void> setRoute(Place start, Place dest) async {
+    _route = GroupRoute(start, dest);
+    _routeCtl.add(_route);
+  }
+
+  @override
+  Future<void> clearRoute() async {
+    _route = null;
+    _routeCtl.add(null);
+  }
 
   @override
   Stream<Signal> signals() => const Stream.empty();

@@ -29,11 +29,7 @@ class AirApp extends StatelessWidget {
     return MaterialApp(
       title: 'Air',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: Colors.deepOrange,
-        brightness: Brightness.dark,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(colorSchemeSeed: Colors.deepOrange, useMaterial3: true),
       home: HomePage(service: service),
     );
   }

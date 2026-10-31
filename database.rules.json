@@ -4,6 +4,7 @@
       "$code": {
         ".read": "auth != null",
         "created": { ".write": "auth != null && !data.exists()" },
+        "route": { ".write": "auth != null" },
         "riders": {
           "$uid": { ".write": "auth != null && auth.uid === $uid" }
         },
