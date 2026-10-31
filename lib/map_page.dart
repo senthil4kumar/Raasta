@@ -12,7 +12,10 @@ import 'audio_unlock.dart';
 import 'directions_sheet.dart';
 import 'rider.dart';
 import 'routing.dart';
+import 'theme/app_theme.dart';
 import 'voice.dart';
+import 'widgets/glass_surface.dart';
+import 'widgets/pressable_scale.dart';
 
 const _palette = [
   Color(0xFFE8710A),
@@ -375,13 +378,10 @@ class _MapPageState extends State<MapPage> {
               SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Material(
-                    elevation: 4,
+                  child: GlassSurface(
+                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                     borderRadius: BorderRadius.circular(28),
-                    color: scheme.surface,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4),
-                      child: Row(
+                    child: Row(
                         children: [
                           IconButton(
                             icon: const Icon(Icons.arrow_back),
@@ -434,20 +434,22 @@ class _MapPageState extends State<MapPage> {
                     ),
                   ),
                 ),
-              ),
               if (_error != null)
                 Positioned(
                   top: 96,
                   left: 16,
                   right: 16,
                   child: SafeArea(
-                    child: Material(
-                      elevation: 3,
-                      borderRadius: BorderRadius.circular(12),
-                      color: scheme.secondaryContainer,
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(_error!),
+                    child: GlassSurface(
+                      padding: const EdgeInsets.all(14),
+                      borderRadius: BorderRadius.circular(16),
+                      tint: scheme.secondaryContainer.withValues(alpha: 0.85),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline_rounded, color: scheme.secondary),
+                          const SizedBox(width: 10),
+                          Expanded(child: Text(_error!)),
+                        ],
                       ),
                     ),
                   ),
@@ -538,53 +540,61 @@ class _MapPageState extends State<MapPage> {
   Widget _routeCard() {
     final r = _groupRoute!;
     final info = _routeInfo;
-    return Padding(
+    final scheme = Theme.of(context).colorScheme;
+    final card = Padding(
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-      child: Material(
-        elevation: 4,
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(14, 8, 4, 8),
-          child: Row(
-            children: [
-              const Icon(Icons.place, color: Color(0xFFD93025)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      r.dest.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      _routeError ??
-                          (info == null
-                              ? 'Finding route...'
-                              : '${info.distanceText} · ${info.durationText} by car'),
-                      style: const TextStyle(
-                        color: Colors.black54,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
+      child: GlassSurface(
+        padding: const EdgeInsets.fromLTRB(14, 10, 4, 10),
+        borderRadius: BorderRadius.circular(18),
+        child: Row(
+          children: [
+            Icon(Icons.place_rounded, color: scheme.error),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    r.dest.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  Text(
+                    _routeError ??
+                        (info == null
+                            ? 'Finding route...'
+                            : '${info.distanceText} · ${info.durationText} by car'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
               ),
-              IconButton(
-                icon: const Icon(Icons.close, color: Colors.black54),
-                tooltip: 'Clear route for everyone',
-                onPressed: widget.service.clearRoute,
-              ),
-            ],
-          ),
+            ),
+            IconButton(
+              icon: Icon(Icons.close_rounded, color: scheme.onSurfaceVariant),
+              tooltip: 'Clear route for everyone',
+              onPressed: widget.service.clearRoute,
+            ),
+          ],
         ),
       ),
+    );
+    return AnimatedSwitcher(
+      duration: motionDuration(context, const Duration(milliseconds: 320)),
+      switchInCurve: Curves.easeOutCubic,
+      transitionBuilder: (child, anim) => FadeTransition(
+        opacity: anim,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.12),
+            end: Offset.zero,
+          ).animate(anim),
+          child: child,
+        ),
+      ),
+      child: KeyedSubtree(key: ValueKey(r.dest.name), child: card),
     );
   }
 
@@ -653,19 +663,17 @@ class _MapPageState extends State<MapPage> {
           ),
         ),
         const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(12),
-          ),
+        GlassSurface(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          borderRadius: BorderRadius.circular(14),
+          blur: 12,
           child: Text(
             on
                 ? 'Talking...'
                 : _voice.connected == 0
                 ? 'Hold to talk · nobody linked yet'
                 : 'Hold to talk · ${_voice.connected} linked',
-            style: const TextStyle(fontSize: 12, color: Colors.black87),
+            style: Theme.of(context).textTheme.labelSmall,
           ),
         ),
         if (_voice.error != null)
@@ -689,17 +697,17 @@ class _RoundButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      elevation: 3,
-      shape: const CircleBorder(),
-      color: Colors.white,
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
+    final scheme = Theme.of(context).colorScheme;
+    return PressableScale(
+      onTap: onTap,
+      child: GlassSurface(
+        padding: EdgeInsets.zero,
+        borderRadius: BorderRadius.circular(22),
+        blur: 14,
         child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Icon(icon, color: color ?? Colors.black87),
+          width: 46,
+          height: 46,
+          child: Icon(icon, color: color ?? scheme.onSurface),
         ),
       ),
     );
@@ -724,55 +732,49 @@ class _RiderChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      elevation: 3,
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(28),
-      child: InkWell(
+    final scheme = Theme.of(context).colorScheme;
+    return PressableScale(
+      onTap: onTap,
+      child: GlassSurface(
+        padding: const EdgeInsets.fromLTRB(6, 6, 14, 6),
         borderRadius: BorderRadius.circular(28),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(6, 6, 14, 6),
-          child: Opacity(
-            opacity: stale ? 0.5 : 1,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: color,
-                  child: Text(
-                    rider.name.isEmpty ? '?' : rider.name[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+        blur: 12,
+        child: Opacity(
+          opacity: stale ? 0.5 : 1,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: color,
+                child: Text(
+                  rider.name.isEmpty ? '?' : rider.name[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isMe ? '${rider.name} (you)' : rider.name,
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                    ),
-                    Text(
-                      stale ? '$distance · last seen' : distance,
-                      style: const TextStyle(
-                        color: Colors.black54,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isMe ? '${rider.name} (you)' : rider.name,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontSize: 13,
+                        ),
+                  ),
+                  Text(
+                    stale ? '$distance · last seen' : distance,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
