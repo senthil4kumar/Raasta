@@ -27,7 +27,7 @@ class AirApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Air',
+      title: 'Raasta',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(colorSchemeSeed: Colors.deepOrange, useMaterial3: true),
       home: HomePage(service: service),
