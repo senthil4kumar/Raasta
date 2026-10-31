@@ -32,7 +32,7 @@ class AirApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: buildRaastaTheme(brightness: Brightness.light),
       darkTheme: buildRaastaTheme(brightness: Brightness.dark),
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.dark,
       home: HomePage(service: service),
     );
   }

@@ -2,7 +2,8 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 
-/// Frosted glass panel used on map overlays and sheets.
+/// Dark translucent glass with a hairline border. Reads clearly over both the
+/// black home screen and a light OpenStreetMap tile.
 class GlassSurface extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -14,19 +15,14 @@ class GlassSurface extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16),
-    this.borderRadius = const BorderRadius.all(Radius.circular(24)),
+    this.borderRadius = const BorderRadius.all(Radius.circular(6)),
     this.blur = 18,
     this.tint,
   });
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final fill =
-        tint ??
-        scheme.surfaceContainerHighest.withValues(
-          alpha: Theme.of(context).brightness == Brightness.dark ? 0.72 : 0.65,
-        );
+    final fill = tint ?? const Color(0xFF0B0B0D).withValues(alpha: 0.74);
     return ClipRRect(
       borderRadius: borderRadius,
       child: BackdropFilter(
@@ -35,12 +31,12 @@ class GlassSurface extends StatelessWidget {
           decoration: BoxDecoration(
             color: fill,
             borderRadius: borderRadius,
-            border: Border.all(color: scheme.outline.withValues(alpha: 0.35)),
-            boxShadow: [
+            border: Border.all(color: const Color(0x2EFFFFFF), width: 0.7),
+            boxShadow: const [
               BoxShadow(
-                color: scheme.shadow,
-                blurRadius: 24,
-                offset: const Offset(0, 8),
+                color: Color(0x66000000),
+                blurRadius: 22,
+                offset: Offset(0, 6),
               ),
             ],
           ),

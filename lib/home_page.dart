@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 import 'group_service.dart';
 import 'map_page.dart';
 import 'theme/app_theme.dart';
-import 'widgets/glass_surface.dart';
-import 'widgets/mesh_background.dart';
-import 'widgets/pressable_scale.dart';
+import 'widgets/luxe_backdrop.dart';
+import 'widgets/luxe_controls.dart';
 import 'widgets/stagger_reveal.dart' show revealStagger;
 
 class HomePage extends StatefulWidget {
@@ -104,282 +102,273 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Widget _startTab(ColorScheme scheme) {
+  Widget _hint(String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Text(
+      text,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: RaastaColors.muted,
+        height: 1.5,
+        letterSpacing: 0.4,
+      ),
+    ),
+  );
+
+  Widget _startTab() {
     return Column(
       key: const ValueKey('start'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
+        _hint(
           'You are the Ride Captain. Start a ride and share the code with your riders.',
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: scheme.onSurfaceVariant),
         ),
-        const SizedBox(height: 18),
-        TextField(
-          controller: _captain,
-          textCapitalization: TextCapitalization.words,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => _busy ? null : _start(),
-          decoration: const InputDecoration(
-            labelText: 'Ride Captain name',
-            prefixIcon: Icon(Icons.sports_motorsports_rounded),
+        const SizedBox(height: 8),
+        FocusUnderline(
+          child: TextField(
+            controller: _captain,
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _busy ? null : _start(),
+            decoration: const InputDecoration(labelText: 'Ride Captain name'),
           ),
         ),
-        const SizedBox(height: 20),
-        PressableScale(
-          onTap: _busy ? null : _start,
-          child: FilledButton.icon(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(58),
-              backgroundColor: scheme.primary,
-              foregroundColor: scheme.onPrimary,
-            ),
-            onPressed: _busy ? null : _start,
-            icon: const Icon(Icons.play_arrow_rounded),
-            label: const Text('Start the ride'),
-          ),
+        const SizedBox(height: 30),
+        LuxeButton(
+          label: 'Start the ride',
+          onPressed: _busy ? null : _start,
         ),
       ],
     );
   }
 
-  Widget _joinTab(ColorScheme scheme) {
+  Widget _joinTab() {
     return Column(
       key: const ValueKey('join'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'Ask your Ride Captain for the 4-digit code.',
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: scheme.onSurfaceVariant),
-        ),
-        const SizedBox(height: 18),
-        TextField(
-          controller: _name,
-          textCapitalization: TextCapitalization.words,
-          textInputAction: TextInputAction.next,
-          decoration: const InputDecoration(
-            labelText: 'Your name',
-            prefixIcon: Icon(Icons.person_outline_rounded),
+        _hint('Ask your Ride Captain for the 4-digit code.'),
+        const SizedBox(height: 8),
+        FocusUnderline(
+          child: TextField(
+            controller: _name,
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(labelText: 'Your name'),
           ),
         ),
-        const SizedBox(height: 14),
-        TextField(
-          controller: _code,
-          keyboardType: TextInputType.number,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => _busy ? null : _join(),
-          maxLength: 4,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          style: const TextStyle(
-            fontSize: 24,
-            letterSpacing: 12,
-            fontWeight: FontWeight.w700,
-          ),
-          textAlign: TextAlign.center,
-          decoration: const InputDecoration(
-            labelText: 'Ride code',
-            prefixIcon: Icon(Icons.pin_outlined),
-            counterText: '',
-          ),
-        ),
-        const SizedBox(height: 20),
-        PressableScale(
-          onTap: _busy ? null : _join,
-          child: FilledButton.icon(
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(58),
-              backgroundColor: scheme.primary,
-              foregroundColor: scheme.onPrimary,
+        const SizedBox(height: 10),
+        FocusUnderline(
+          child: TextField(
+            controller: _code,
+            keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _busy ? null : _join(),
+            maxLength: 4,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: const TextStyle(
+              fontSize: 24,
+              letterSpacing: 14,
+              fontWeight: FontWeight.w300,
             ),
-            onPressed: _busy ? null : _join,
-            icon: const Icon(Icons.login_rounded),
-            label: const Text('Join the ride'),
+            textAlign: TextAlign.center,
+            decoration: const InputDecoration(
+              labelText: 'Ride code',
+              counterText: '',
+            ),
           ),
         ),
+        const SizedBox(height: 30),
+        LuxeButton(label: 'Join the ride', onPressed: _busy ? null : _join),
+      ],
+    );
+  }
+
+  Widget _form(BuildContext context, {required bool centered}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Align(
+          alignment: centered ? Alignment.center : Alignment.centerLeft,
+          child: LuxeWordmark(text: 'RAASTA', size: centered ? 30 : 38),
+        ),
+        const SizedBox(height: 12),
+        revealStagger(
+          context,
+          Text(
+            'Ride together. See each other. Talk.',
+            textAlign: centered ? TextAlign.center : TextAlign.start,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: RaastaColors.muted,
+              letterSpacing: 0.8,
+            ),
+          ),
+          index: 4,
+        ),
+        const SizedBox(height: 26),
+        revealStagger(context, const _GrowingHairline(), index: 5),
+        const SizedBox(height: 26),
+        if (widget.service.isDemo) ...[
+          revealStagger(context, const _DemoBanner(), index: 5),
+          const SizedBox(height: 20),
+        ],
+        revealStagger(
+          context,
+          LuxeToggle(
+            index: _tab,
+            labels: const ['Start a ride', 'Join a ride'],
+            onChanged: (i) => setState(() => _tab = i),
+          ),
+          index: 6,
+        ),
+        const SizedBox(height: 22),
+        revealStagger(
+          context,
+          AnimatedSize(
+            duration: motionDuration(context, const Duration(milliseconds: 260)),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: AnimatedSwitcher(
+              duration: motionDuration(context, const Duration(milliseconds: 280)),
+              switchInCurve: Curves.easeOutCubic,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0.03, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: _tab == 0 ? _startTab() : _joinTab(),
+            ),
+          ),
+          index: 7,
+        ),
+        if (_busy) ...[
+          const SizedBox(height: 22),
+          const LinearProgressIndicator(minHeight: 1),
+        ],
+        const SizedBox(height: 40),
+        revealStagger(context, const _FeatureRow(), index: 9),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      body: MeshBackground(
-        child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      resizeToAvoidBottomInset: true,
+      body: LuxeBackdrop(
+        child: LayoutBuilder(
+          builder: (context, c) {
+            final wide = c.maxWidth >= 860;
+            if (wide) {
+              return Row(
                 children: [
-                  revealStagger(context, _HeroHeader(isDark: isDark), index: 0),
-                  const SizedBox(height: 28),
-                  revealStagger(
-                    context,
-                    GlassSurface(
-                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          if (widget.service.isDemo) ...[
-                            _DemoBanner(scheme: scheme),
-                            const SizedBox(height: 16),
-                          ],
-                          _TabSwitch(
-                            index: _tab,
-                            labels: const ['Start a ride', 'Join a ride'],
-                            icons: const [
-                              Icons.flag_rounded,
-                              Icons.group_add_rounded,
-                            ],
-                            onChanged: (i) => setState(() => _tab = i),
+                  const Expanded(flex: 11, child: BikeHero()),
+                  Expanded(
+                    flex: 9,
+                    child: SafeArea(
+                      child: Center(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(24, 32, 64, 32),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 440),
+                            child: _form(context, centered: false),
                           ),
-                          const SizedBox(height: 22),
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 220),
-                            switchInCurve: Curves.easeOutCubic,
-                            transitionBuilder: (child, animation) =>
-                                FadeTransition(
-                                  opacity: animation,
-                                  child: child,
-                                ),
-                            child: _tab == 0
-                                ? _startTab(scheme)
-                                : _joinTab(scheme),
-                          ),
-                          if (_busy) ...[
-                            const SizedBox(height: 20),
-                            Center(
-                              child: SizedBox(
-                                width: 28,
-                                height: 28,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: scheme.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
+                        ),
                       ),
                     ),
-                    index: 1,
                   ),
-                  const SizedBox(height: 24),
-                  revealStagger(context, _FeatureRow(scheme: scheme), index: 6),
                 ],
+              );
+            }
+            final heroH = (c.maxHeight * 0.34).clamp(190.0, 340.0);
+            return SafeArea(
+              child: SingleChildScrollView(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: Column(
+                      children: [
+                        SizedBox(
+                          height: heroH,
+                          child: ShaderMask(
+                            blendMode: BlendMode.dstIn,
+                            shaderCallback: (r) => const LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Colors.white, Colors.white, Colors.transparent],
+                              stops: [0, 0.78, 1],
+                            ).createShader(r),
+                            child: const BikeHero(),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(28, 4, 28, 28),
+                          child: _form(context, centered: false),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
   }
 }
 
-class _HeroHeader extends StatelessWidget {
-  final bool isDark;
-  const _HeroHeader({required this.isDark});
+/// Hairline divider that draws itself in from the left.
+class _GrowingHairline extends StatelessWidget {
+  const _GrowingHairline();
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final logo = Container(
-      width: 96,
-      height: 96,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [scheme.primary, RaastaColors.coral.withValues(alpha: 0.9)],
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: motionEnabled(context) ? 0 : 1, end: 1),
+      duration: const Duration(milliseconds: 1400),
+      curve: Curves.easeOutCubic,
+      builder: (context, t, _) => Align(
+        alignment: Alignment.centerLeft,
+        child: FractionallySizedBox(
+          widthFactor: t,
+          child: Container(height: 0.7, color: RaastaColors.hairline),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: scheme.primary.withValues(alpha: 0.45),
-            blurRadius: 32,
-            offset: const Offset(0, 12),
-          ),
-        ],
       ),
-      child: const Icon(
-        Icons.two_wheeler_rounded,
-        size: 48,
-        color: Colors.white,
-      ),
-    );
-
-    Widget heroLogo = logo;
-    if (motionEnabled(context)) {
-      heroLogo = logo
-          .animate(onPlay: (c) => c.repeat(reverse: true))
-          .scale(
-            begin: const Offset(1, 1),
-            end: const Offset(1.04, 1.04),
-            duration: 2.8.seconds,
-            curve: Curves.easeInOut,
-          )
-          .then()
-          .shimmer(
-            duration: 1.2.seconds,
-            color: Colors.white.withValues(alpha: 0.25),
-          );
-    }
-
-    return Column(
-      children: [
-        heroLogo,
-        const SizedBox(height: 20),
-        Text(
-          'Raasta',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineLarge,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Ride together. See each other. Talk.',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-            color: scheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 }
 
 class _DemoBanner extends StatelessWidget {
-  final ColorScheme scheme;
-  const _DemoBanner({required this.scheme});
+  const _DemoBanner();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        gradient: LinearGradient(
-          colors: [
-            scheme.secondary.withValues(alpha: 0.15),
-            scheme.tertiary.withValues(alpha: 0.12),
-          ],
-        ),
-        border: Border.all(color: scheme.secondary.withValues(alpha: 0.25)),
+        borderRadius: BorderRadius.circular(3),
+        color: Colors.white.withValues(alpha: 0.03),
+        border: Border.all(color: RaastaColors.hairline, width: 0.7),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.auto_awesome_rounded, color: scheme.secondary, size: 22),
+          const Icon(Icons.auto_awesome_outlined,
+              color: RaastaColors.amber, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               'Demo mode: Firebase is not set up, so two simulated '
               'riders will appear around you.',
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: scheme.onSurface, height: 1.4),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: RaastaColors.muted,
+                height: 1.45,
+              ),
             ),
           ),
         ],
@@ -388,124 +377,39 @@ class _DemoBanner extends StatelessWidget {
   }
 }
 
+/// Three tiny hairline-separated labels.
 class _FeatureRow extends StatelessWidget {
-  final ColorScheme scheme;
-  const _FeatureRow({required this.scheme});
+  const _FeatureRow();
 
   @override
   Widget build(BuildContext context) {
-    Widget chip(IconData icon, String label) {
-      return Expanded(
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
-            border: Border.all(color: scheme.outline.withValues(alpha: 0.25)),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, size: 22, color: scheme.primary),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Row(
-      children: [
-        chip(Icons.map_rounded, 'Live map'),
-        const SizedBox(width: 10),
-        chip(Icons.mic_rounded, 'Push-to-talk'),
-        const SizedBox(width: 10),
-        chip(Icons.route_rounded, 'Group routes'),
-      ],
-    );
-  }
-}
-
-class _TabSwitch extends StatelessWidget {
-  final int index;
-  final List<String> labels;
-  final List<IconData> icons;
-  final ValueChanged<int> onChanged;
-  const _TabSwitch({
-    required this.index,
-    required this.labels,
-    required this.icons,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
-        border: Border.all(color: scheme.outline.withValues(alpha: 0.3)),
-      ),
-      child: Row(
+    Widget label(IconData icon, String text) => Expanded(
+      child: Column(
         children: [
-          for (var i = 0; i < labels.length; i++)
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => onChanged(i),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOutCubic,
-                  padding: const EdgeInsets.symmetric(vertical: 13),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                    color: index == i ? scheme.primary : Colors.transparent,
-                    boxShadow: index == i
-                        ? [
-                            BoxShadow(
-                              color: scheme.primary.withValues(alpha: 0.35),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        icons[i],
-                        size: 19,
-                        color: index == i
-                            ? scheme.onPrimary
-                            : scheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        labels[i],
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: index == i
-                              ? scheme.onPrimary
-                              : scheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+          Icon(icon, size: 16, color: RaastaColors.muted),
+          const SizedBox(height: 8),
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: RaastaColors.muted,
+              fontSize: 11,
+              letterSpacing: 1.1,
             ),
+          ),
         ],
       ),
+    );
+    Widget sep() => Container(width: 0.7, height: 34, color: RaastaColors.hairline);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        label(Icons.map_outlined, 'Live map'),
+        sep(),
+        label(Icons.mic_none_rounded, 'Push-to-talk'),
+        sep(),
+        label(Icons.route_outlined, 'Group routes'),
+      ],
     );
   }
 }
