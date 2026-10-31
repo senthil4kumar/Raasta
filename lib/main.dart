@@ -11,8 +11,7 @@ Future<void> main() async {
   GroupService service;
   try {
     if (kIsWeb && !firebaseConfigured) throw StateError('no web config');
-    await Firebase.initializeApp(
-        options: kIsWeb ? firebaseWebOptions : null);
+    await Firebase.initializeApp(options: kIsWeb ? firebaseWebOptions : null);
     service = FirebaseGroupService();
   } catch (_) {
     // No Firebase config yet (see README): run with simulated riders.

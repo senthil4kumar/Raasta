@@ -80,11 +80,11 @@ class FirebaseGroupService implements GroupService {
 
   @override
   Future<void> updateLocation(LatLng p) => _member().update({
-        'lat': p.latitude,
-        'lng': p.longitude,
-        'name': _name,
-        'ts': ServerValue.timestamp,
-      });
+    'lat': p.latitude,
+    'lng': p.longitude,
+    'name': _name,
+    'ts': ServerValue.timestamp,
+  });
 
   @override
   Stream<List<Rider>> riders() {
@@ -94,14 +94,19 @@ class FirebaseGroupService implements GroupService {
       if (value is Map) {
         value.forEach((id, v) {
           if (v is Map && v['lat'] != null && v['lng'] != null) {
-            out.add(Rider(
-              id: id as String,
-              name: (v['name'] ?? 'Rider') as String,
-              position:
-                  LatLng((v['lat'] as num).toDouble(), (v['lng'] as num).toDouble()),
-              updatedAt: DateTime.fromMillisecondsSinceEpoch(
-                  (v['ts'] as num?)?.toInt() ?? 0),
-            ));
+            out.add(
+              Rider(
+                id: id as String,
+                name: (v['name'] ?? 'Rider') as String,
+                position: LatLng(
+                  (v['lat'] as num).toDouble(),
+                  (v['lng'] as num).toDouble(),
+                ),
+                updatedAt: DateTime.fromMillisecondsSinceEpoch(
+                  (v['ts'] as num?)?.toInt() ?? 0,
+                ),
+              ),
+            );
           }
         });
       }
@@ -156,12 +161,18 @@ class DemoGroupService implements GroupService {
     if (me == null) return;
     final now = DateTime.now();
     LatLng orbit(double radius, double phase) => LatLng(
-        me.latitude + radius * sin(_t + phase),
-        me.longitude + radius * cos(_t + phase));
+      me.latitude + radius * sin(_t + phase),
+      me.longitude + radius * cos(_t + phase),
+    );
     _controller.add([
       Rider(id: 'me', name: _name, position: me, updatedAt: now),
       Rider(id: 'a', name: 'Arjun', position: orbit(0.004, 0), updatedAt: now),
-      Rider(id: 'b', name: 'Meera', position: orbit(0.007, 2.5), updatedAt: now),
+      Rider(
+        id: 'b',
+        name: 'Meera',
+        position: orbit(0.007, 2.5),
+        updatedAt: now,
+      ),
     ]);
   }
 
