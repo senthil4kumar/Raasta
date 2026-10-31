@@ -3,7 +3,7 @@
 Rider companion app (iOS + Android, Flutter). Phase I prototype.
 
 ## Working now
-- Create a group (6-character code) or join with a code
+- Create a group (6-digit code) or join with a code
 - Live rider pins on an OpenStreetMap map
 - Handlebar remote via keyboard keys: Up / + zoom in, Down / - zoom out,
   arrows pan left/right, Enter re-centres. Any Bluetooth keyboard works for testing.

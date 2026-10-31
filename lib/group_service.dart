@@ -14,7 +14,7 @@ abstract class GroupService {
   String get myId;
   bool get isDemo;
 
-  /// Creates a group and returns its 6-character join code.
+  /// Creates a group and returns its 6-digit join code.
   Future<String> createGroup(String name);
 
   /// Returns false when no group exists with this code.
@@ -36,9 +36,8 @@ class Signal {
 }
 
 String _newCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   final r = Random.secure();
-  return List.generate(6, (_) => chars[r.nextInt(chars.length)]).join();
+  return List.generate(6, (_) => r.nextInt(10)).join();
 }
 
 class FirebaseGroupService implements GroupService {
@@ -72,7 +71,10 @@ class FirebaseGroupService implements GroupService {
   @override
   Future<String> createGroup(String name) async {
     await _signIn();
-    final code = _newCode();
+    var code = _newCode();
+    while ((await _db.ref('groups/$code/created').get()).exists) {
+      code = _newCode();
+    }
     await _db.ref('groups/$code/created').set(ServerValue.timestamp);
     await _enter(code, name);
     return code;
@@ -179,7 +181,7 @@ class DemoGroupService implements GroupService {
   @override
   Future<String> createGroup(String name) async {
     _start(name);
-    return 'DEMO42';
+    return '123456';
   }
 
   @override
