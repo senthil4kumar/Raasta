@@ -247,6 +247,11 @@ class _MapPageState extends State<MapPage> {
               child: Text(_voice.error!),
             ),
           ),
+        for (final line in _voice.log)
+          Text(
+            line,
+            style: const TextStyle(fontSize: 10, color: Colors.white60),
+          ),
         if (_voice.status.isNotEmpty)
           Text(
             _voice.status.entries

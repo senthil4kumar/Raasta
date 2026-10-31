@@ -18,6 +18,17 @@ class VoiceController extends ChangeNotifier {
   /// Per-rider link state, shown on screen to help debug connections.
   final status = <String, String>{};
 
+  /// Recent connection events, shown on screen while we debug voice.
+  final log = <String>[];
+
+  void _log(String m) {
+    log.add(m);
+    if (log.length > 8) log.removeAt(0);
+    notifyListeners();
+  }
+
+  static String _s(String id) => id.length > 4 ? id.substring(0, 4) : id;
+
   MediaStream? _local;
   StreamSubscription<Signal>? _sig;
   final _pcs = <String, RTCPeerConnection>{};
@@ -39,6 +50,7 @@ class VoiceController extends ChangeNotifier {
       _mute(true);
       enabled = true;
       error = null;
+      _log('mic on, me=${_s(service.myId)}');
       _sig = service.signals().listen(
         _onSignal,
         onError: (e) => _fail('Voice error: $e'),
@@ -50,6 +62,7 @@ class VoiceController extends ChangeNotifier {
   }
 
   void _fail(String m) {
+    _log(m);
     error = m;
     notifyListeners();
   }
@@ -98,6 +111,7 @@ class VoiceController extends ChangeNotifier {
       });
     };
     pc.onTrack = (e) {
+      _log('audio from ${_s(id)}: ${e.streams.length} stream');
       if (e.streams.isNotEmpty) _attach(id, e.streams.first);
     };
     pc.onIceConnectionState = (s) {
@@ -128,6 +142,7 @@ class VoiceController extends ChangeNotifier {
       final offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
       await service.sendSignal(id, {'type': 'offer', 'sdp': offer.sdp});
+      _log('sent offer to ${_s(id)}');
     } catch (e) {
       _fail('Voice error: $e');
     }
@@ -136,6 +151,7 @@ class VoiceController extends ChangeNotifier {
   Future<void> _onSignal(Signal s) async {
     try {
       final type = s.data['type'];
+      if (type != 'ice') _log('got $type from ${_s(s.from)}');
       if (type == 'offer') {
         await _close(s.from);
         final pc = await _create(s.from);
@@ -145,6 +161,7 @@ class VoiceController extends ChangeNotifier {
         final answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
         await service.sendSignal(s.from, {'type': 'answer', 'sdp': answer.sdp});
+        _log('sent answer to ${_s(s.from)}');
         await _flushIce(s.from);
       } else if (type == 'answer') {
         final pc = _pcs[s.from];
