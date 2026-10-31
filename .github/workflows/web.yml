@@ -22,7 +22,11 @@ jobs:
         with:
           channel: stable
       - run: flutter pub get
-      - run: flutter build web --release --pwa-strategy=none --base-href /air-rider-app/
+      - run: >
+          flutter build web --release --pwa-strategy=none
+          --base-href /air-rider-app/
+          --dart-define=TURN_USERNAME=${{ secrets.TURN_USERNAME }}
+          --dart-define=TURN_CREDENTIAL=${{ secrets.TURN_CREDENTIAL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
