@@ -13,7 +13,9 @@ class VoiceController extends ChangeNotifier {
   final GroupService service;
   VoiceController(this.service);
 
-  Map<String, dynamic> get _ice => {'iceServers': iceServers};
+  List<Map<String, dynamic>> _iceServers = const [];
+
+  Map<String, dynamic> get _ice => {'iceServers': _iceServers};
 
   /// Per-rider link state, shown on screen to help debug connections.
   final status = <String, String>{};
@@ -47,10 +49,13 @@ class VoiceController extends ChangeNotifier {
         'audio': {'echoCancellation': true, 'noiseSuppression': true},
         'video': false,
       });
+      _iceServers = await loadIceServers();
       _mute(true);
       enabled = true;
       error = null;
-      _log('mic on, me=${_s(service.myId)}');
+      _log(
+        'mic on, me=${_s(service.myId)}, relay=${_iceServers.length > 1 ? 'yes' : 'no'}',
+      );
       _sig = service.signals().listen(
         _onSignal,
         onError: (e) => _fail('Voice error: $e'),
@@ -116,7 +121,7 @@ class VoiceController extends ChangeNotifier {
     };
     pc.onIceConnectionState = (s) {
       status[id] = s.name.replaceFirst('RTCIceConnectionState', '');
-      notifyListeners();
+      _log('${_s(id)}: ${status[id]}');
     };
     pc.onConnectionState = (s) {
       if (s == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
