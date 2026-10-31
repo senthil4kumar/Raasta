@@ -226,7 +226,10 @@ class _MapPageState extends State<MapPage> {
               ),
             ),
           FilledButton.icon(
-            onPressed: _voice.enable,
+            onPressed: () async {
+              await _voice.enable();
+              _voice.updatePeers(_latest);
+            },
             icon: const Icon(Icons.mic),
             label: const Text('Enable voice'),
           ),

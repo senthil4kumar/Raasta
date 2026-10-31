@@ -134,10 +134,16 @@ class FirebaseGroupService implements GroupService {
   @override
   Stream<Signal> signals() async* {
     final inbox = _db.ref('groups/$_code/rtc/$myId');
-    await inbox.remove(); // drop leftovers from an earlier session
     await for (final e in inbox.onChildAdded) {
       final v = e.snapshot.value;
       e.snapshot.ref.remove();
+      // Ignore leftovers from an earlier session, but keep calls that were
+      // sent while this rider had not enabled voice yet.
+      final ts = (v is Map ? v['ts'] : null) as num?;
+      if (ts == null ||
+          DateTime.now().millisecondsSinceEpoch - ts.toInt() > 120000) {
+        continue;
+      }
       if (v is Map && v['from'] is String && v['data'] is Map) {
         yield Signal(
           v['from'] as String,
@@ -149,7 +155,11 @@ class FirebaseGroupService implements GroupService {
 
   @override
   Future<void> sendSignal(String to, Map<String, dynamic> data) =>
-      _db.ref('groups/$_code/rtc/$to').push().set({'from': myId, 'data': data});
+      _db.ref('groups/$_code/rtc/$to').push().set({
+        'from': myId,
+        'data': data,
+        'ts': DateTime.now().millisecondsSinceEpoch,
+      });
 }
 
 /// Offline stand-in: two fake riders orbit around wherever you are.
