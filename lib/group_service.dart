@@ -23,6 +23,16 @@ abstract class GroupService {
   Future<void> updateLocation(LatLng position);
   Stream<List<Rider>> riders();
   Future<void> leave();
+
+  /// Voice call set-up messages addressed to me (WebRTC offers, answers, ICE).
+  Stream<Signal> signals();
+  Future<void> sendSignal(String to, Map<String, dynamic> data);
+}
+
+class Signal {
+  final String from;
+  final Map<String, dynamic> data;
+  const Signal(this.from, this.data);
 }
 
 String _newCode() {
@@ -118,7 +128,28 @@ class FirebaseGroupService implements GroupService {
   Future<void> leave() async {
     await _member().onDisconnect().cancel();
     await _member().remove();
+    await _db.ref('groups/$_code/rtc/$myId').remove();
   }
+
+  @override
+  Stream<Signal> signals() async* {
+    final inbox = _db.ref('groups/$_code/rtc/$myId');
+    await inbox.remove(); // drop leftovers from an earlier session
+    await for (final e in inbox.onChildAdded) {
+      final v = e.snapshot.value;
+      e.snapshot.ref.remove();
+      if (v is Map && v['from'] is String && v['data'] is Map) {
+        yield Signal(
+          v['from'] as String,
+          Map<String, dynamic>.from(v['data'] as Map),
+        );
+      }
+    }
+  }
+
+  @override
+  Future<void> sendSignal(String to, Map<String, dynamic> data) =>
+      _db.ref('groups/$_code/rtc/$to').push().set({'from': myId, 'data': data});
 }
 
 /// Offline stand-in: two fake riders orbit around wherever you are.
@@ -187,4 +218,10 @@ class DemoGroupService implements GroupService {
 
   @override
   Future<void> leave() async => _timer?.cancel();
+
+  @override
+  Stream<Signal> signals() => const Stream.empty();
+
+  @override
+  Future<void> sendSignal(String to, Map<String, dynamic> data) async {}
 }

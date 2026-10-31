@@ -6,6 +6,12 @@
         "created": { ".write": "auth != null && !data.exists()" },
         "riders": {
           "$uid": { ".write": "auth != null && auth.uid === $uid" }
+        },
+        "rtc": {
+          "$uid": {
+            ".read": "auth != null && auth.uid === $uid",
+            ".write": "auth != null"
+          }
         }
       }
     }

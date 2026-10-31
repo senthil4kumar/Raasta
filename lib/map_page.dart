@@ -9,6 +9,10 @@ import 'package:latlong2/latlong.dart';
 import 'group_service.dart';
 import 'rider.dart';
 
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+
+import 'voice.dart';
+
 class MapPage extends StatefulWidget {
   final GroupService service;
   final String code;
@@ -29,6 +33,8 @@ class _MapPageState extends State<MapPage> {
   final _focus = FocusNode();
   StreamSubscription<Position>? _gps;
   Timer? _beat;
+  late final VoiceController _voice = VoiceController(widget.service);
+  StreamSubscription<List<Rider>>? _ridersSub;
   LatLng? _me;
   String? _error;
 
@@ -36,6 +42,10 @@ class _MapPageState extends State<MapPage> {
   void initState() {
     super.initState();
     _startLocation();
+    _ridersSub = widget.service.riders().listen((r) {
+      _latest = r;
+      _voice.updatePeers(r);
+    });
   }
 
   void _onPosition(Position p) {
@@ -105,6 +115,10 @@ class _MapPageState extends State<MapPage> {
 
   // Handlebar remote: a Bluetooth remote that acts as a keyboard arrives here.
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
+    if (event.logicalKey == LogicalKeyboardKey.space) {
+      if (event is! KeyRepeatEvent) _voice.setTalking(event is KeyDownEvent);
+      return KeyEventResult.handled;
+    }
     if (event is KeyUpEvent) return KeyEventResult.ignored;
     final cam = _map.camera;
     final k = event.logicalKey;
@@ -196,6 +210,72 @@ class _MapPageState extends State<MapPage> {
         : '${s ~/ 60} min ago';
   }
 
+  Widget _voiceButton() {
+    if (widget.service.isDemo) {
+      return const Chip(label: Text('Voice needs Firebase (demo mode)'));
+    }
+    if (!_voice.enabled) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_voice.error != null)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text(_voice.error!),
+              ),
+            ),
+          FilledButton.icon(
+            onPressed: _voice.enable,
+            icon: const Icon(Icons.mic),
+            label: const Text('Enable voice'),
+          ),
+        ],
+      );
+    }
+    final on = _voice.talking;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_voice.error != null)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Text(_voice.error!),
+            ),
+          ),
+        Listener(
+          onPointerDown: (_) => _voice.setTalking(true),
+          onPointerUp: (_) => _voice.setTalking(false),
+          onPointerCancel: (_) => _voice.setTalking(false),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+            decoration: BoxDecoration(
+              color: on ? Colors.redAccent : Colors.deepOrange,
+              borderRadius: BorderRadius.circular(40),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(on ? Icons.mic : Icons.mic_none, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(
+                  on
+                      ? 'Talking...'
+                      : 'Hold to talk (${_voice.connected} linked)',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   void _recenter() {
     final me = _me;
     if (me != null) _map.move(me, _map.camera.zoom);
@@ -205,6 +285,8 @@ class _MapPageState extends State<MapPage> {
   void dispose() {
     _gps?.cancel();
     _beat?.cancel();
+    _ridersSub?.cancel();
+    _voice.dispose();
     _focus.dispose();
     widget.service.leave();
     super.dispose();
@@ -280,6 +362,28 @@ class _MapPageState extends State<MapPage> {
                   ],
                 );
               },
+            ),
+            ListenableBuilder(
+              listenable: _voice,
+              builder: (context, _) => Stack(
+                children: [
+                  // Remote audio plays through these (invisible) elements.
+                  for (final r in _voice.renderers.values)
+                    Positioned(
+                      left: 0,
+                      bottom: 0,
+                      width: 1,
+                      height: 1,
+                      child: RTCVideoView(r),
+                    ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 24,
+                    child: Center(child: _voiceButton()),
+                  ),
+                ],
+              ),
             ),
             if (_error != null)
               Positioned(
