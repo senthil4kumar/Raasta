@@ -38,6 +38,16 @@ class VoiceController extends ChangeNotifier {
   MediaStream? _local;
   StreamSubscription<Signal>? _sig;
   final _pcs = <String, RTCPeerConnection>{};
+  final _starting = <String>{};
+
+  /// One microphone track per rider link, so a private call can send audio to
+  /// one rider only while the others stay silent.
+  final _tracks = <String, MediaStreamTrack>{};
+  String _target = _everyone;
+
+  /// Pass as the talk target to speak to the whole group.
+  static const _everyone = 'all';
+  static const everyone = _everyone;
   final _pendingIce = <String, List<RTCIceCandidate>>{};
   final renderers = <String, RTCVideoRenderer>{};
 
@@ -79,14 +89,27 @@ class VoiceController extends ChangeNotifier {
     for (final t in _local?.getAudioTracks() ?? <MediaStreamTrack>[]) {
       t.enabled = !mute;
     }
+    for (final t in _tracks.values) {
+      t.enabled = false;
+    }
   }
 
-  void setTalking(bool on) {
+  bool _sendsTo(String id) => _target == _everyone || _target == id;
+
+  /// Start or stop talking. [target] is [everyone] or one rider's id for a
+  /// private conversation: only that rider's link carries your voice.
+  void setTalking(bool on, {String target = _everyone}) {
     resumeAllAudio();
-    if (!enabled || talking == on) return;
+    if (!enabled) return;
+    if (talking == on && (!on || _target == target)) return;
     talking = on;
-    _mute(!on);
-    service.setVoiceState(enabled: true, talking: on);
+    _target = on ? target : _everyone;
+    _tracks.forEach((id, t) => t.enabled = on && _sendsTo(id));
+    service.setVoiceState(
+      enabled: true,
+      talking: on,
+      talkTo: on ? target : null,
+    );
     notifyListeners();
   }
 
@@ -102,7 +125,11 @@ class VoiceController extends ChangeNotifier {
         .where((id) => id != service.myId)
         .toSet();
     for (final id in ids) {
-      if (!_pcs.containsKey(id) && service.myId.compareTo(id) < 0) _call(id);
+      if (!_pcs.containsKey(id) &&
+          !_starting.contains(id) &&
+          service.myId.compareTo(id) < 0) {
+        _call(id);
+      }
     }
     for (final id in _pcs.keys.toList()) {
       if (!ids.contains(id)) _close(id);
@@ -111,9 +138,10 @@ class VoiceController extends ChangeNotifier {
 
   Future<RTCPeerConnection> _create(String id) async {
     final pc = await createPeerConnection(_ice);
-    for (final t in _local!.getAudioTracks()) {
-      await pc.addTrack(t, _local!);
-    }
+    final mine = await _local!.getAudioTracks().first.clone();
+    mine.enabled = talking && _sendsTo(id);
+    _tracks[id] = mine;
+    await pc.addTrack(mine, _local!);
     pc.onIceCandidate = (c) {
       if (c.candidate == null) return;
       service.sendSignal(id, {
@@ -151,6 +179,7 @@ class VoiceController extends ChangeNotifier {
   }
 
   Future<void> _call(String id) async {
+    _starting.add(id);
     try {
       final pc = await _create(id);
       final offer = await pc.createOffer();
@@ -159,6 +188,8 @@ class VoiceController extends ChangeNotifier {
       _log('sent offer to ${_s(id)}');
     } catch (e) {
       _fail('Voice error: $e');
+    } finally {
+      _starting.remove(id);
     }
   }
 
@@ -214,7 +245,9 @@ class VoiceController extends ChangeNotifier {
     _pendingIce.remove(id);
     status.remove(id);
     final pc = _pcs.remove(id);
+    final track = _tracks.remove(id);
     final r = renderers.remove(id);
+    track?.stop();
     await pc?.close();
     if (r != null) {
       r.srcObject = null;

@@ -24,7 +24,11 @@ abstract class GroupService {
   Future<void> updateLocation(LatLng position);
 
   /// Tells the group whether I'm on voice and whether I'm talking right now.
-  Future<void> setVoiceState({required bool enabled, required bool talking});
+  Future<void> setVoiceState({
+    required bool enabled,
+    required bool talking,
+    String? talkTo,
+  });
   Stream<List<Rider>> riders();
   Future<void> leave();
 
@@ -114,8 +118,15 @@ class FirebaseGroupService implements GroupService {
   });
 
   @override
-  Future<void> setVoiceState({required bool enabled, required bool talking}) =>
-      _member().update({'voice': enabled, 'talking': enabled && talking});
+  Future<void> setVoiceState({
+    required bool enabled,
+    required bool talking,
+    String? talkTo,
+  }) => _member().update({
+    'voice': enabled,
+    'talking': enabled && talking,
+    'talkTo': enabled && talking ? (talkTo ?? 'all') : null,
+  });
 
   @override
   Stream<List<Rider>> riders() {
@@ -138,6 +149,7 @@ class FirebaseGroupService implements GroupService {
                 ),
                 voiceOn: v['voice'] == true,
                 talking: v['talking'] == true,
+                talkTo: v['talkTo'] as String?,
               ),
             );
           }
@@ -265,6 +277,7 @@ class DemoGroupService implements GroupService {
         updatedAt: now,
         voiceOn: true,
         talking: sin(_t * 0.7) > 0.8,
+        talkTo: 'all',
       ),
       Rider(
         id: 'b',
@@ -285,6 +298,7 @@ class DemoGroupService implements GroupService {
   Future<void> setVoiceState({
     required bool enabled,
     required bool talking,
+    String? talkTo,
   }) async {}
 
   @override

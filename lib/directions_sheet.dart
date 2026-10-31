@@ -11,7 +11,10 @@ import 'widgets/glass_surface.dart';
 class RoutePick {
   final Place start;
   final Place dest;
-  const RoutePick(this.start, this.dest);
+
+  /// True: everyone in the ride sees the route. False: only this rider.
+  final bool shared;
+  const RoutePick(this.start, this.dest, {required this.shared});
 }
 
 /// Bottom sheet to choose a start and destination. Start defaults to the
@@ -183,10 +186,27 @@ class _DirectionsSheetState extends State<DirectionsSheet> {
               minimumSize: const Size.fromHeight(52),
             ),
             onPressed: ready
-                ? () => Navigator.pop(context, RoutePick(_start!, _dest!))
+                ? () => Navigator.pop(
+                    context,
+                    RoutePick(_start!, _dest!, shared: true),
+                  )
                 : null,
-            icon: const Icon(Icons.directions_rounded),
-            label: const Text('Show route to the whole group'),
+            icon: const Icon(Icons.groups_rounded),
+            label: const Text('Share with the whole group'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(52),
+            ),
+            onPressed: ready
+                ? () => Navigator.pop(
+                    context,
+                    RoutePick(_start!, _dest!, shared: false),
+                  )
+                : null,
+            icon: const Icon(Icons.person_rounded),
+            label: const Text('Just for me'),
           ),
         ],
       ),

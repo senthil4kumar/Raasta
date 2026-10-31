@@ -11,6 +11,9 @@ class Rider {
   final bool voiceOn;
   final bool talking;
 
+  /// Who the rider is talking to: 'all' or one rider's id (private talk).
+  final String? talkTo;
+
   const Rider({
     required this.id,
     required this.name,
@@ -18,5 +21,6 @@ class Rider {
     required this.updatedAt,
     this.voiceOn = false,
     this.talking = false,
+    this.talkTo,
   });
 }
